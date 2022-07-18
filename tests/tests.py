@@ -70,13 +70,16 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
+
             env.create_command.run()
+            assert not env.is_activated
 
             # pre-activation, none of the paths in `PYTHONPATH` (i.e. `sys.path`) should
             # have anything to do with the created environment.
             assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
+            assert env.is_activated
 
             # post-activation, at least one of the paths in `PYTHONPATH` (i.e. `sys.path`)
             # should refer to the created environment.
