@@ -21,7 +21,7 @@ class Command:
         return self._command == other._command and self.description == other.description
 
     def run(self):
-        return subprocess.run(self._command, shell=True, capture_output=True)
+        return subprocess.run(self._command, shell=True, capture_output=True, text=True)
 
 
 class DevDeps:
@@ -57,6 +57,8 @@ class Environment:
         else:
             self._activate_script = self.path / Path('Scripts') / Path('activate_this.py')
 
+        self.is_activated = False
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.path})'
 
@@ -67,4 +69,5 @@ class Environment:
         return Command(f'virtualenv {self.path} --download --activators python')
 
     def activate(self):
+        self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
