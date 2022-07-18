@@ -1,0 +1,12 @@
+[project]
+name = "chakra"
+version = "0.1.0"
+description = "Standardized workflow for Python projects."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT License" }
+authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
+
+[build-system]
+requires = ["flit_core>=3.2,<4"]
+build-backend = "flit_core.buildapi"
