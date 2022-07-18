@@ -1,10 +1,12 @@
 import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 from chakra import Command, DevDeps, Environment
+
+# load a patched version of `tempfile`.
+from tempfile_patch import tempfile
 
 
 class TestCommand(unittest.TestCase):
