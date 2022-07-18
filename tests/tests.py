@@ -14,24 +14,24 @@ class TestCommand(unittest.TestCase):
 
         result = Command('echo foo').run()
         assert result.returncode == 0
-        assert result.stdout.decode('utf-8').strip() == 'foo'
-        assert result.stderr.decode('utf-8').strip() == ''
+        assert result.stdout.strip() == 'foo'
+        assert result.stderr.strip() == ''
 
     def test_error(self):
         """Run a command which gives an error."""
 
         result = Command('foo').run()
         assert result.returncode != 0
-        assert result.stdout.decode('utf-8').strip() == ''
-        assert result.stderr.decode('utf-8').strip() != ''
+        assert result.stdout.strip() == ''
+        assert result.stderr.strip() != ''
 
     def test_empty(self):
         """Run a command which is the empty string ``."""
 
         result = Command('').run()
         assert result.returncode == 0
-        assert result.stdout.decode('utf-8').strip() == ''
-        assert result.stderr.decode('utf-8').strip() == ''
+        assert result.stdout.strip() == ''
+        assert result.stderr.strip() == ''
 
 
 class TestDevDeps(unittest.TestCase):

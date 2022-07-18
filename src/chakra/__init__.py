@@ -21,7 +21,7 @@ class Command:
         return self._command == other._command and self.description == other.description
 
     def run(self):
-        return subprocess.run(self._command, shell=True, capture_output=True)
+        return subprocess.run(self._command, shell=True, capture_output=True, text=True)
 
 
 class DevDeps:
