@@ -58,7 +58,7 @@ class Environment:
             self._activate_script = self.path / Path('Scripts') / Path('activate_this.py')
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.path})'
+        return f'{self.__class__.__name__}({self.path!r})'
 
     @property
     def create_command(self):
