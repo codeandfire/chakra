@@ -1,27 +1,73 @@
 import os
 import subprocess
-import tempfile
+from .tempfile_patch import tempfile
 from pathlib import Path
 
 
 class Command:
     """A shell command."""
 
-    def __init__(self, command, description=''):
-        self._command = command
+    def __init__(self, command, subcommand=None, positional_args=[], optional_args={},
+                 flags=[], env_vars={}, description=''):
+        self.command = command
+        self.subcommand = subcommand
+        self.positional_args = positional_args
+        self.optional_args = optional_args
+        self.flags = flags
+        self.env_vars = env_vars
         self.description = description
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}({self._command!r}, '
-            f'description={self.description!r})'
+            f'{self.__class__.__name__}(command={self.command!r}, '
+            f'subcommand={self.subcommand!r}, positional_args={self.positional_args!r}, '
+            f'optional_args={self.optional_args!r}, flags={self.flags!r}, '
+            f'env_vars={self.env_vars!r}, description={self.description!r})'
         )
 
     def __eq__(self, other):
-        return self._command == other._command and self.description == other.description
+        return repr(self) == repr(other)
 
     def run(self):
-        return subprocess.run(self._command, shell=True, capture_output=True)
+        for name, value in self.env_vars.items():
+            os.environ[name] = value
+
+        full_command = [self.command]
+        if self.subcommand is not None:
+            full_command += [self.subcommand]
+        full_command += self.positional_args
+        full_command += [
+            item for key, value in self.optional_args.items() for item in (key, value)]
+        full_command += self.flags
+
+        return subprocess.run(full_command, check=True, capture_output=True, text=True)
+
+
+class Hook(Command):
+    """An executable script."""
+
+    def __init__(self, script_path):
+        self.script_path = script_path
+        if self.script_path.suffix == '.py':
+            self.interpreter = 'python'
+        elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
+            self.interpreter = 'bash'
+        elif self.script_path.suffix == '.ps1':
+            self.interpreter = 'powershell'
+        else:
+            raise RuntimeError(
+                f"unsupported extension '{self.script_path.suffix}': "
+                "only Python ('.py' extension), Bash (no extension or '.sh' extension) "
+                "and Powershell ('.ps1' extension) scripts are supported."
+            )
+
+        super().__init__(command=self.interpreter, positional_args=[self.script_path])
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}(interpreter={self.interpreter!r}, '
+            f'script_path={self.script_path!r})'
+        )
 
 
 class DevDeps:
@@ -57,14 +103,20 @@ class Environment:
         else:
             self._activate_script = self.path / Path('Scripts') / Path('activate_this.py')
 
+        self.is_activated = False
+
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.path})'
+        return f'{self.__class__.__name__}({self.path!r})'
 
     @property
     def create_command(self):
         if self.path.exists():
             raise RuntimeError(f'{self.path} already exists!')
-        return Command(f'virtualenv {self.path} --download --activators python')
+
+        return Command('virtualenv', positional_args=[str(self.path)],
+                       optional_args={'--activators': 'python'},
+                       flags=['--download'])
 
     def activate(self):
+        self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
