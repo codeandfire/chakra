@@ -7,21 +7,40 @@ from pathlib import Path
 class Command:
     """A shell command."""
 
-    def __init__(self, command, description=''):
-        self._command = command
+    def __init__(self, command, subcommand=None, positional_args=[], optional_args={},
+                 flags=[], env_vars={}, description=''):
+        self.command = command
+        self.subcommand = subcommand
+        self.positional_args = positional_args
+        self.optional_args = optional_args
+        self.flags = flags
+        self.env_vars = env_vars
         self.description = description
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}({self._command!r}, '
-            f'description={self.description!r})'
+            f'{self.__class__.__name__}(command={self.command!r}, '
+            f'subcommand={self.subcommand!r}, positional_args={self.positional_args!r}, '
+            f'optional_args={self.optional_args!r}, flags={self.flags!r}, '
+            f'env_vars={self.env_vars!r}, description={self.description!r})'
         )
 
     def __eq__(self, other):
-        return self._command == other._command and self.description == other.description
+        return repr(self) == repr(other)
 
     def run(self):
-        return subprocess.run(self._command, shell=True, capture_output=True)
+        for name, value in self.env_vars.items():
+            os.environ[name] = value
+
+        full_command = [self.command]
+        if self.subcommand is not None:
+            full_command += [self.subcommand]
+        full_command += self.positional_args
+        full_command += [
+            item for key, value in self.optional_args.items() for item in (key, value)]
+        full_command += self.flags
+
+        return subprocess.run(full_command, check=True, capture_output=True, text=True)
 
 
 class DevDeps:
@@ -57,6 +76,8 @@ class Environment:
         else:
             self._activate_script = self.path / Path('Scripts') / Path('activate_this.py')
 
+        self.is_activated = False
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.path!r})'
 
@@ -64,7 +85,11 @@ class Environment:
     def create_command(self):
         if self.path.exists():
             raise RuntimeError(f'{self.path} already exists!')
-        return Command(f'virtualenv {self.path} --download --activators python')
+
+        return Command('virtualenv', positional_args=[str(self.path)],
+                       optional_args={'--activators': 'python'},
+                       flags=['--download'])
 
     def activate(self):
+        self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
