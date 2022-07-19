@@ -34,6 +34,7 @@ class TestCommand(unittest.TestCase):
 
         assert result.stderr.strip() == ''
 
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_mkdir(self):
         """Run a `mkdir` command against an existing directory."""
 
@@ -59,7 +60,7 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file:///foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
 
         with self.assertRaises(subprocess.CalledProcessError) as exc:
             command = Command(
@@ -67,7 +68,7 @@ class TestCommand(unittest.TestCase):
                 subcommand='install',
                 positional_args=['foo', 'bar', 'baz'],
                 optional_args={
-                    '--find-links': Path('/foo/bar').as_uri(),
+                    '--find-links': Path('./foo/bar').resolve(strict=False).as_uri(),
                     '--progress-bar': 'off',
                 },
                 flags=['--isolated', '--no-color'],
@@ -110,10 +111,11 @@ class TestCommand(unittest.TestCase):
     def test_env_vars_powershell(self):
         """Verify that environment variables are accessible to the command."""
 
-        command = Command('pwsh', optional_args={'-Command': 'echo $env:Foo $env:Bar'},
+        command = Command('powershell',
+                          optional_args={'-Command': 'echo $env:Foo $env:Bar'},
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run()
-        assert result.stdout.strip() == 'bar foo'
+        assert result.stdout.strip() == 'bar\nfoo'
 
 
 class TestHook(unittest.TestCase):

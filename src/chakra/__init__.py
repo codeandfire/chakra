@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+from .tempfile_patch import tempfile
 from pathlib import Path
 
 
@@ -50,7 +50,7 @@ class Hook(Command):
         self.script_path = script_path
 
         if self.script_path.suffix == '.ps1':
-            self.interpreter = 'pwsh'
+            self.interpreter = 'powershell'
 
             super().__init__(
                 command=self.interpreter, optional_args={'-File': str(self.script_path)})
@@ -94,7 +94,7 @@ class DevDeps:
     def requirements_txt(self):
         temp_file = tempfile.NamedTemporaryFile()
         with open(temp_file.name, 'w') as f:
-            f.write(os.linesep.join(self.docs + self.checks + self.tests))
+            f.write('\n'.join(self.docs + self.checks + self.tests))
         return temp_file
 
 
