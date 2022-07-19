@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, DevDeps, Environment
+from chakra import Command, DevDeps, Environment, Hook
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -114,6 +114,67 @@ class TestCommand(unittest.TestCase):
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run()
         assert result.stdout.strip() == 'bar foo'
+
+
+class TestHook(unittest.TestCase):
+
+    def test_python(self):
+        """Test a Python hook."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.py', 'w') as f:
+                f.write("print('foo')")
+            result = Hook(Path('foo.py')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    def test_bash(self):
+        """Test a Bash hook."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo', 'w') as f:
+                f.write("#!/bin/bash\n\necho 'foo'")
+            result = Hook(Path('foo')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    def test_bash_sh_extension(self):
+        """Test a Bash hook with an `.sh` extension."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.sh', 'w') as f:
+                f.write("#!/bin/bash\n\necho 'foo'")
+            result = Hook(Path('foo.sh')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    def test_powershell(self):
+        """Test a Powershell hook."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.ps1', 'w') as f:
+                f.write("echo 'foo'")
+            result = Hook(Path('foo.ps1')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    def test_unsupported(self):
+        """Test a hook with an unsupported extension."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.bat', 'w') as f:
+                f.write('dir')
+
+            with self.assertRaises(RuntimeError):
+                Hook(Path('foo.bat')).run()
 
 
 class TestDevDeps(unittest.TestCase):

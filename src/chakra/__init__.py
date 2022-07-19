@@ -43,6 +43,33 @@ class Command:
         return subprocess.run(full_command, check=True, capture_output=True, text=True)
 
 
+class Hook(Command):
+    """An executable script."""
+
+    def __init__(self, script_path):
+        self.script_path = script_path
+        if self.script_path.suffix == '.py':
+            self.interpreter = 'python'
+        elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
+            self.interpreter = 'bash'
+        elif self.script_path.suffix == '.ps1':
+            self.interpreter = 'pwsh'
+        else:
+            raise RuntimeError(
+                f"unsupported extension '{self.script_path.suffix}': "
+                "only Python ('.py' extension), Bash (no extension or '.sh' extension) "
+                "and Powershell ('.ps1' extension) scripts are supported."
+            )
+
+        super().__init__(command=self.interpreter, positional_args=[self.script_path])
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}(interpreter={self.interpreter!r}, '
+            f'script_path={self.script_path!r})'
+        )
+
+
 class DevDeps:
     """Development dependencies."""
 
