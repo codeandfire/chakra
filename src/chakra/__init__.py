@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+from .tempfile_patch import tempfile
 from pathlib import Path
 
 
@@ -53,7 +53,7 @@ class Hook(Command):
         elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
             self.interpreter = 'bash'
         elif self.script_path.suffix == '.ps1':
-            self.interpreter = 'pwsh'
+            self.interpreter = 'powershell'
         else:
             raise RuntimeError(
                 f"unsupported extension '{self.script_path.suffix}': "
