@@ -41,7 +41,7 @@ class DevDeps:
     def requirements_txt(self):
         temp_file = tempfile.NamedTemporaryFile()
         with open(temp_file.name, 'w') as f:
-            f.write(os.linesep.join(self.docs + self.checks + self.tests))
+            f.write('\n'.join(self.docs + self.checks + self.tests))
         return temp_file
 
 
