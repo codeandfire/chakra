@@ -37,6 +37,9 @@ class DirChangeTemporaryDirectory(tempfile.TemporaryDirectory):
             os.chdir(self.orig_dir)
         super().__exit__(exc_type, exc_value, exc_tb)
 
+    def __fspath__(self):
+        return self.name
+
 
 # apply the patch.
 tempfile.TemporaryDirectory = DirChangeTemporaryDirectory
