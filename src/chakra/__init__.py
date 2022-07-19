@@ -48,20 +48,27 @@ class Hook(Command):
 
     def __init__(self, script_path):
         self.script_path = script_path
-        if self.script_path.suffix == '.py':
-            self.interpreter = 'python'
-        elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
-            self.interpreter = 'bash'
-        elif self.script_path.suffix == '.ps1':
-            self.interpreter = 'pwsh'
-        else:
-            raise RuntimeError(
-                f"unsupported extension '{self.script_path.suffix}': "
-                "only Python ('.py' extension), Bash (no extension or '.sh' extension) "
-                "and Powershell ('.ps1' extension) scripts are supported."
-            )
 
-        super().__init__(command=self.interpreter, positional_args=[self.script_path])
+        if self.script_path.suffix == '.ps1':
+            self.interpreter = 'pwsh'
+
+            super().__init__(
+                command=self.interpreter, optional_args={'-File': str(self.script_path)})
+
+        else:
+            if self.script_path.suffix == '.py':
+                self.interpreter = 'python'
+            elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
+                self.interpreter = 'bash'
+            else:
+                raise RuntimeError(
+                    f"unsupported extension '{self.script_path.suffix}': "
+                    "only Python ('.py' extension), Bash (no extension or '.sh' "
+                    "extension) and Powershell ('.ps1' extension) scripts are supported."
+                )
+
+            super().__init__(
+                command=self.interpreter, positional_args=[str(self.script_path)])
 
     def __repr__(self):
         return (
