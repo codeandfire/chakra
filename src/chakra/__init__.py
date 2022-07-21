@@ -1,3 +1,6 @@
+import shutil
+from collections import namedtuple
+import distutils
 import os
 import subprocess
 from .tempfile_patch import tempfile
@@ -127,3 +130,105 @@ class Environment:
     def activate(self):
         self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
+
+
+class BuildMatrix:
+    """A build matrix."""
+
+    def __init__(self, pythons=['py3'], platforms=['any'], abi_spec='none',
+                 is_subset=False):
+        self.pythons = pythons
+        self.platforms = platforms
+        self.abi_spec = abi_spec
+        self.is_subset = is_subset
+
+    def __iter__(self):
+        builds = []
+
+        Build = namedtuple('Build', fields=['python', 'platform', 'abi'])
+
+        for python in self.pythons:
+            for platform in self.platforms:
+                abi = self.translate_abi_spec(self.abi_spec, python)
+                python = shutil.which(python)
+
+                builds.append(Build(python=python, platform=platform, abi=abi))
+
+        return builds
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}(pythons={self.pythons!r}, '
+            f'platforms={self.platforms!r}, abi_spec={self.abi_spec!r}, '
+            f'is_subset={self.is_subset!r})'
+        )
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    @staticmethod
+    def translate_pytag(pytag):
+        """Translate a PEP-425 Python tag to its corresponding executable."""
+
+        implementation = pytag[:2]
+        major_version = pytag[2]
+        minor_version = pytag[3:]
+
+        if implementation == 'py' or implementation == 'cp':
+            implementation = 'python'
+        elif implementation == 'pp':
+            implementation = 'pypy'
+        else:
+            # not supported right now
+            pass
+
+        if minor_version == '':
+            python = f'{implementation}{major_version}'
+        else:
+            python = f'{implementation}{major_version}.{minor_version}'
+
+        return shutil.which(python)
+
+    @staticmethod
+    def translate_abi_spec(abi_spec, pytag):
+        """Translate the ABI spec into an ABI tag for the given Python tag."""
+
+        if abi_spec == 'none':
+            abi_tag = 'none'
+        elif abi_spec == 'stable':
+            abi_tag = 'abi3'
+        else:
+            abi_tag = pytag
+            if abi_spec['pydebug']:
+                abi_tag += 'd'
+            if abi_spec['pymalloc']:
+                abi_tag += 'm'
+            if abi_spec['wide-unicode']:
+                abi_tag += 'u'
+
+        return abi_tag
+
+    def identify(self):
+        """Identify the subset of builds that are possible on the current machine."""
+
+        current_platform = distutils.util.get_platform()
+        assert current_platform in self.platforms, (
+            f'current platform {current_platform} does not match any platform in the '
+            'build matrix!'
+        )
+
+        found_pythons = []
+
+        for python in self.pythons:
+            if self.translate_pytag(python) is not None:
+                found_pythons.append(python)
+
+        assert len(found_pythons) > 0, (
+            'could not find a Python interpreter matching any of those specified in the '
+            'build matrix!'
+        )
+
+        return BuildMatrix(
+            platforms=[current_platform], pythons=found_pythons, abi_spec=self.abi_spec,
+            is_subset=True,
+        )
