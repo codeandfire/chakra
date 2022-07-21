@@ -27,21 +27,18 @@ class Command:
 class DevDeps:
     """Development dependencies."""
 
-    def __init__(self, docs=[], checks=[], tests=[]):
-        self.docs = docs
-        self.checks = checks
-        self.tests = tests
+    def __init__(self, **kwargs):
+        self._deps = kwargs
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}(docs={self.docs!r}, checks={self.checks!r}, '
-            f'tests={self.tests!r}'
-        )
+        return f'{self.__class__.__name__}({self._deps!r})'
 
     def requirements_txt(self):
         temp_file = tempfile.NamedTemporaryFile()
         with open(temp_file.name, 'w') as f:
-            f.write(os.linesep.join(self.docs + self.checks + self.tests))
+            f.write(
+                os.linesep.join(
+                    [dep for dep_list in self._deps.values() for dep in dep_list]))
         return temp_file
 
 
