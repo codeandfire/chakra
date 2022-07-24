@@ -7,7 +7,7 @@ from .tempfile_patch import tempfile
 from pathlib import Path
 
 
-class Command:
+class Command(object):
     """A shell command."""
 
     def __init__(self, command, subcommand=None, positional_args=[], optional_args={},
@@ -80,7 +80,7 @@ class Hook(Command):
         )
 
 
-class DevDeps:
+class DevDeps(object):
     """Development dependencies."""
 
     def __init__(self, docs=[], checks=[], tests=[]):
@@ -101,7 +101,7 @@ class DevDeps:
         return temp_file
 
 
-class Environment:
+class Environment(object):
     """A virtual environment."""
 
     def __init__(self, path):
@@ -132,7 +132,7 @@ class Environment:
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
 
 
-class BuildMatrix:
+class BuildMatrix(object):
     """A build matrix."""
 
     def __init__(self, pythons=['py3'], platforms=['any'], abi_spec='none',
