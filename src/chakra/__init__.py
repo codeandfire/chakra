@@ -33,6 +33,9 @@ class DevDeps:
     def __repr__(self):
         return f'{self.__class__.__name__}({self._deps!r})'
 
+    def __getitem__(self, key):
+        return self._deps[key]
+
     def requirements_txt(self):
         temp_file = tempfile.NamedTemporaryFile()
         with open(temp_file.name, 'w') as f:
