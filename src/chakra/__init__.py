@@ -53,9 +53,12 @@ class Environment:
         self.path = path
 
         if os.name == 'posix':
-            self._activate_script = self.path / Path('bin') / Path('activate_this.py')
+            self._bin = self.path / Path('bin')
         else:
-            self._activate_script = self.path / Path('Scripts') / Path('activate_this.py')
+            self._bin = self.path / Path('Scripts')
+
+        self._activate_script = self._bin / Path('activate_this.py')
+        self.python_executable = self._bin / Path('python')
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.path})'
