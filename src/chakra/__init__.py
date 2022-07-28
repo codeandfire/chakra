@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -68,3 +69,6 @@ class Environment:
 
     def activate(self):
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
+
+    def remove(self):
+        shutil.rmtree(self.path)
