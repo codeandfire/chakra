@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, DevDeps, Environment, Hook, ParamCommand
+from chakra import Command, Config, DevDeps, Environment, Hook, ParamCommand
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -313,3 +313,46 @@ class TestEnvironment(unittest.TestCase):
 
             with self.assertRaises(RuntimeError):
                 Environment(env_path).create_command.run()
+
+
+class TestConfig(unittest.TestCase):
+
+    def test(self):
+        """Test a sample `pyproject.toml` configuration."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_file = Path(temp_dir) / Path('pyproject.toml')
+            
+            with open(config_file, 'w') as f:
+                f.write("""
+[project]
+name = "foo"
+version = "0.1.0"
+
+[build-system]
+requires = ["setuptools>=60.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.chakra]
+env = "env"
+
+[tool.chakra.dev-deps]
+docs = ["sphinx"]
+lint = ["mypy", "flake8"]
+""")
+                
+            config = Config(config_file)
+
+        assert config.env.path == Path('env')
+        assert config.build_env.path == Path('.build-venv')
+
+        assert config.dev_deps['docs'] == ['sphinx']
+        assert config.dev_deps['lint'] == ['mypy', 'flake8']
+
+        assert config.build_deps['build'] == ['setuptools>=60.0', 'wheel']
+
+        assert config.build_backend == 'setuptools.build_meta'
+        assert config.backend_path is None

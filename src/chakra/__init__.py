@@ -1,3 +1,8 @@
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 from copy import copy
 import os
 import subprocess
@@ -146,3 +151,28 @@ class Environment(object):
     def activate(self):
         self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
+
+
+class Config(object):
+    """Configuration from `pyproject.toml`."""
+
+    def __init__(self, config_file=Path('pyproject.toml')):
+        with open(config_file, 'rb') as f:
+            config = tomllib.load(f)
+
+        chakra_config = config.get('tool', {}).get('chakra', {})
+
+        self.env = Environment(Path(chakra_config.get('env', '.venv')))
+        self.build_env = Environment(Path(chakra_config.get('build-env', '.build-venv')))
+        self.dev_deps = DevDeps(**chakra_config.get('dev-deps', {}))
+        self.build_deps = DevDeps(build=config['build-system'].get('requires', []))
+
+        self.build_backend = config['build-system']['build-backend']
+        self.backend_path = config['build-system'].get('backend-path', None)
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}(env={self.env!r}, build_env={self.build_env!r}, '
+            f'dev_deps={self.dev_deps!r}, build_deps={self.build_deps!r}, '
+            f'build_backend={self.build_backend!r}, backend_path={self.backend_path!r})'
+        )
