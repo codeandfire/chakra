@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, Config, DevDeps, Environment, Hook, ParamCommand
+from chakra.core import Command, Config, DevDeps, Environment, Hook, ParamCommand
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
