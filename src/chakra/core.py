@@ -3,7 +3,6 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from copy import copy
 import os
 import shutil
 import subprocess
@@ -84,25 +83,6 @@ class Hook(Command):
             f'{self.__class__.__name__}(interpreter={self.interpreter!r}, '
             f'script_path={self.script_path!r})'
         )
-
-
-class ParamCommand(object):
-    """A parameterized shell command."""
-
-    def __init__(self, *args, **kwargs):
-        self._command = Command(*args, **kwargs)
-
-    def run(self, **params):
-        command = copy(self._command)
-
-        command.positional_args = [
-            arg.format(**params) for arg in command.positional_args]
-        command.optional_args = {
-            key: value.format(**params) for key, value in command.optional_args.items()}
-        command.env_vars = {
-            key: value.format(**params) for key, value in command.env_vars.items()}
-
-        return command.run()
 
 
 class DevDeps(object):
