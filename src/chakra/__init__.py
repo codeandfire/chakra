@@ -160,15 +160,15 @@ class Config(object):
         with open(config_file, 'rb') as f:
             config = tomllib.load(f)
 
-        chakra_config = config.get('tool', {}).get('chakra', {})
-
-        self.env = Environment(Path(chakra_config.get('env', '.venv')))
-        self.build_env = Environment(Path(chakra_config.get('build-env', '.build-venv')))
-        self.dev_deps = DevDeps(**chakra_config.get('dev-deps', {}))
         self.build_deps = DevDeps(build=config['build-system'].get('requires', []))
-
         self.build_backend = config['build-system']['build-backend']
         self.backend_path = config['build-system'].get('backend-path', None)
+
+        config = config.get('tool', {}).get('chakra', {})
+
+        self.env = Environment(Path(config.get('env', '.venv')))
+        self.build_env = Environment(Path(config.get('build-env', '.build-venv')))
+        self.dev_deps = DevDeps(**config.get('dev-deps', {}))
 
     def __repr__(self):
         return (
