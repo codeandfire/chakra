@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, Config, DevDeps, Environment, Hook, ParamCommand
+from chakra.core import Command, Config, DevDeps, Environment, Hook, ParamCommand
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -345,6 +345,15 @@ lint = ["mypy", "flake8"]
 """)
                 
             config = Config(config_file)
+
+            # a check that the `Metadata.write()` method works.
+            metadata_file = Path(temp_dir) / Path('METADATA')
+            config.metadata.write(metadata_file)
+            assert metadata_file.exists()
+
+        assert config.metadata.name == 'foo'
+        assert str(config.metadata.version) == '0.1.0'
+        assert config.metadata.dependencies == []
 
         assert config.env.path == Path('env')
         assert config.build_env.path == Path('.build-venv')
