@@ -173,8 +173,6 @@ class Config(object):
         self.metadata = Metadata(config)
 
         self.build_deps = DevDeps(build=config['build-system'].get('requires', []))
-        self.build_backend = config['build-system']['build-backend']
-        self.backend_path = config['build-system'].get('backend-path', None)
 
         config = config.get('tool', {}).get('chakra', {})
 
@@ -186,6 +184,5 @@ class Config(object):
         return (
             f'{self.__class__.__name__}(metadata={self.metadata!r}, env={self.env!r}, '
             f'build_env={self.build_env!r}, dev_deps={self.dev_deps!r}, '
-            f'build_deps={self.build_deps!r}, build_backend={self.build_backend!r}, '
-            f'backend_path={self.backend_path!r})'
+            f'build_deps={self.build_deps!r})'
         )
