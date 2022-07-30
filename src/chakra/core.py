@@ -10,6 +10,8 @@ import subprocess
 from .tempfile_patch import tempfile
 from pathlib import Path
 
+from pyproject_metadata import StandardMetadata
+
 
 class Command(object):
     """A shell command."""
@@ -160,12 +162,35 @@ class Environment(object):
         shutil.rmtree(self.path)
 
 
+class Metadata(object):
+    """Project metadata from `pyproject.toml`.
+
+    This is a very thin wrapper around `pyproject_metadata.StandardMetadata`.
+    """
+
+    def __init__(self, pyproject_config):
+        self._metadata = StandardMetadata.from_pyproject(pyproject_config)
+
+    def __repr__(self):
+        return self._metadata.__repr__().replace(
+            self._metadata.__class__.__name__, self.__class__.__name__)
+
+    def __getattr__(self, attr):
+        return getattr(self._metadata, attr)
+
+    def write(self, metadata_file=Path('METADATA')):
+        with open(metadata_file, 'w') as f:
+            f.write(str(self._metadata.as_rfc822()))
+
+
 class Config(object):
     """Configuration from `pyproject.toml`."""
 
     def __init__(self, config_file=Path('pyproject.toml')):
         with open(config_file, 'rb') as f:
             config = tomllib.load(f)
+
+        self.metadata = Metadata(config)
 
         chakra_config = config.get('tool', {}).get('chakra', {})
 
@@ -179,7 +204,8 @@ class Config(object):
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}(env={self.env!r}, build_env={self.build_env!r}, '
-            f'dev_deps={self.dev_deps!r}, build_deps={self.build_deps!r}, '
-            f'build_backend={self.build_backend!r}, backend_path={self.backend_path!r})'
+            f'{self.__class__.__name__}(metadata={self.metadata!r}, env={self.env!r}, '
+            f'build_env={self.build_env!r}, dev_deps={self.dev_deps!r}, '
+            f'build_deps={self.build_deps!r}, build_backend={self.build_backend!r}, '
+            f'backend_path={self.backend_path!r})'
         )

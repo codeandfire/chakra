@@ -7,7 +7,7 @@ requires-python = ">=3.7"
 license = { text = "MIT License" }
 authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
 
-dependencies = ["tomli; python_version<'3.11'", "pep517"]
+dependencies = ["tomli; python_version<'3.11'", "pep517", "pyproject-metadata"]
 
 scripts = { chakra = "chakra:main.cli" }
 
