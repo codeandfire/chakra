@@ -7,10 +7,16 @@ requires-python = ">=3.7"
 license = { text = "MIT License" }
 authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
 
-dependencies = ["tomli; python_version<'3.11'", "pep517", "pyproject-metadata"]
+dependencies = ["tomli; python_version<'3.11'", "pyproject-metadata"]
 
 scripts = { chakra = "chakra:main.cli" }
 
 [build-system]
-requires = ["flit_core>=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = []
+
+[tool.chakra.dev-deps]
+test = ["nose2[coverage_plugin]"]
+fixes = ["flake8", "isort"]
+
+[tool.chakra.source]
+packages = ["chakra"]
