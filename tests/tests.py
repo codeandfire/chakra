@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, Config, DevDeps, Environment, Hook, ParamCommand
+from chakra.core import Command, Config, DevDeps, Environment, Hook
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -179,54 +179,6 @@ class TestHook(unittest.TestCase):
                 Hook(Path('foo.bat')).run()
 
 
-class TestParamCommand(unittest.TestCase):
-
-    def test_echo(self):
-        """Run a parameterized `echo` command."""
-
-        command = ParamCommand(
-            'echo', positional_args=['{word}'], env_vars={'WORD': '{word}'})
-        result = command.run(word='foo')
-        assert result.stdout.strip() == 'foo'
-        assert os.environ['WORD'] == 'foo'
-
-        result = command.run(word='bar')
-        assert result.stdout.strip() == 'bar'
-        assert os.environ['WORD'] == 'bar'
-
-    def test_python_c(self):
-        """Run a parameterized `python -c` command."""
-
-        command = ParamCommand(
-            'python',
-            optional_args={'-c': "print('{text1}', '{text2}')"},
-            env_vars={'TEXT1': '*{text1}*', 'TEXT2': '*{text2}*'},
-        )
-        result = command.run(text1='foo', text2='bar')
-        assert result.stdout.strip() == 'foo bar'
-        assert os.environ['TEXT1'] == '*foo*'
-        assert os.environ['TEXT2'] == '*bar*'
-
-        result = command.run(text1='bar', text2='foo')
-        assert result.stdout.strip() == 'bar foo'
-        assert os.environ['TEXT1'] == '*bar*'
-        assert os.environ['TEXT2'] == '*foo*'
-
-    def test_ls(self):
-        """Run an `ls` command which is badly parameterized."""
-
-        command = ParamCommand('ls', flags=['-{flag}'])
-        with self.assertRaises(subprocess.CalledProcessError) as exc:
-            command.run(flag='l')
-
-    def test_pip(self):
-        """Run a `pip` command which is badly parameterized."""
-
-        command = ParamCommand('pip', subcommand='{subcommand}')
-        with self.assertRaises(subprocess.CalledProcessError) as exc:
-            command.run(subcommand='list')
-
-
 class TestDevDeps(unittest.TestCase):
 
     def test_sample(self):
@@ -330,8 +282,7 @@ name = "foo"
 version = "0.1.0"
 
 [build-system]
-requires = ["setuptools>=60.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["bar", "baz"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -346,13 +297,19 @@ lint = ["mypy", "flake8"]
                 
             config = Config(config_file)
 
+            # a check that the `Metadata.write()` method works.
+            metadata_file = Path(temp_dir) / Path('PKG-INFO')
+            config.metadata.write(metadata_file)
+            assert metadata_file.exists()
+
+        assert config.metadata.name == 'foo'
+        assert str(config.metadata.version) == '0.1.0'
+        assert config.metadata.dependencies == []
+
         assert config.env.path == Path('env')
         assert config.build_env.path == Path('.build-venv')
 
         assert config.dev_deps['docs'] == ['sphinx']
         assert config.dev_deps['lint'] == ['mypy', 'flake8']
 
-        assert config.build_deps['build'] == ['setuptools>=60.0', 'wheel']
-
-        assert config.build_backend == 'setuptools.build_meta'
-        assert config.backend_path is None
+        assert config.build_deps['build'] == ['bar', 'baz']
