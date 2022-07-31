@@ -178,7 +178,7 @@ class Metadata(object):
     def __getattr__(self, attr):
         return getattr(self._metadata, attr)
 
-    def write(self, metadata_file=Path('METADATA')):
+    def write(self, metadata_file=Path('PKG-INFO')):
         with open(metadata_file, 'w') as f:
             f.write(str(self._metadata.as_rfc822()))
 
