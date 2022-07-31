@@ -282,8 +282,7 @@ name = "foo"
 version = "0.1.0"
 
 [build-system]
-requires = ["setuptools>=60.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["bar", "baz"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -299,7 +298,7 @@ lint = ["mypy", "flake8"]
             config = Config(config_file)
 
             # a check that the `Metadata.write()` method works.
-            metadata_file = Path(temp_dir) / Path('METADATA')
+            metadata_file = Path(temp_dir) / Path('PKG-INFO')
             config.metadata.write(metadata_file)
             assert metadata_file.exists()
 
@@ -313,7 +312,4 @@ lint = ["mypy", "flake8"]
         assert config.dev_deps['docs'] == ['sphinx']
         assert config.dev_deps['lint'] == ['mypy', 'flake8']
 
-        assert config.build_deps['build'] == ['setuptools>=60.0', 'wheel']
-
-        assert config.build_backend == 'setuptools.build_meta'
-        assert config.backend_path is None
+        assert config.build_deps['build'] == ['bar', 'baz']
