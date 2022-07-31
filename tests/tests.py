@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -324,25 +325,26 @@ class TestConfig(unittest.TestCase):
             config_file = Path(temp_dir) / Path('pyproject.toml')
             
             with open(config_file, 'w') as f:
-                f.write("""
-[project]
-name = "foo"
-version = "0.1.0"
-
-[build-system]
-requires = ["setuptools>=60.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.chakra]
-env = "env"
-
-[tool.chakra.dev-deps]
-docs = ["sphinx"]
-lint = ["mypy", "flake8"]
-""")
+                f.write(textwrap.dedent("""
+                    [project]
+                    name = "foo"
+                    version = "0.1.0"
+                    
+                    [build-system]
+                    requires = ["setuptools>=60.0", "wheel"]
+                    build-backend = "setuptools.build_meta"
+                    
+                    [tool.setuptools.packages.find]
+                    where = ["src"]
+                    
+                    [tool.chakra]
+                    env = "env"
+                    
+                    [tool.chakra.dev-deps]
+                    docs = ["sphinx"]
+                    lint = ["mypy", "flake8"]
+                    """
+                ))
                 
             config = Config(config_file)
 
