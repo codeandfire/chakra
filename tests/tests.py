@@ -314,6 +314,9 @@ env = "env"
 [tool.chakra.dev-deps]
 docs = ["sphinx"]
 lint = ["mypy", "flake8"]
+
+[tool.chakra.source]
+packages = ["foo"]
 """)
                 
             config = Config(config_file)

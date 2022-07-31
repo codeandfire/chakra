@@ -3,6 +3,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
+import glob
 import os
 import shutil
 import subprocess
@@ -163,6 +164,44 @@ class Metadata(object):
             f.write(str(self._metadata.as_rfc822()))
 
 
+class Source(object):
+    """Globs representing the distribution source."""
+
+    def __init__(self, packages):
+        self._globs = ['pyproject.toml']
+
+        for package in packages:
+            self._globs.append(f'src/{package}/**/*.py')
+            self._globs.append(f'{package}/**/*.py')
+
+        self._exclude_globs = []
+
+    def __repr__(self):
+        return \
+            f'{self.__class__.__name__}({self._globs!r}, exclude={self._exclude_globs!r})'
+
+    def __contains__(self, item):
+        return (item in self._globs) and (item not in self._exclude_globs)
+
+    def include(self, glob):
+        self._globs.append(glob)
+
+    def exclude(self, glob):
+        self._exclude_globs.append(glob)
+
+    def expand(self):
+        files = []
+        for pattern in self._globs:
+            files.extend(glob.glob(pattern, recursive=True))
+
+        exclude_files = []
+        for pattern in self._exclude_globs:
+            exclude_files.extend(glob.glob(pattern, recursive=True))
+
+        files = [file for file in files if file not in exclude_files]
+        return files
+
+
 class Config(object):
     """Configuration from `pyproject.toml`."""
 
@@ -179,6 +218,14 @@ class Config(object):
         self.env = Environment(Path(config.get('env', '.venv')))
         self.build_env = Environment(Path(config.get('build-env', '.build-venv')))
         self.dev_deps = DevDeps(**config.get('dev-deps', {}))
+
+        source_config = config['source']
+        self.source = Source(source_config['packages'])
+
+        for glob in source_config.get('include', []):
+            self.source.include(glob)
+        for glob in source_config.get('exclude', []):
+            self.source.exclude(glob)
 
     def __repr__(self):
         return (
