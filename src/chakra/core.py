@@ -3,7 +3,6 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from copy import copy
 import os
 import shutil
 import subprocess
@@ -84,25 +83,6 @@ class Hook(Command):
             f'{self.__class__.__name__}(interpreter={self.interpreter!r}, '
             f'script_path={self.script_path!r})'
         )
-
-
-class ParamCommand(object):
-    """A parameterized shell command."""
-
-    def __init__(self, *args, **kwargs):
-        self._command = Command(*args, **kwargs)
-
-    def run(self, **params):
-        command = copy(self._command)
-
-        command.positional_args = [
-            arg.format(**params) for arg in command.positional_args]
-        command.optional_args = {
-            key: value.format(**params) for key, value in command.optional_args.items()}
-        command.env_vars = {
-            key: value.format(**params) for key, value in command.env_vars.items()}
-
-        return command.run()
 
 
 class DevDeps(object):
@@ -192,20 +172,17 @@ class Config(object):
 
         self.metadata = Metadata(config)
 
-        chakra_config = config.get('tool', {}).get('chakra', {})
-
-        self.env = Environment(Path(chakra_config.get('env', '.venv')))
-        self.build_env = Environment(Path(chakra_config.get('build-env', '.build-venv')))
-        self.dev_deps = DevDeps(**chakra_config.get('dev-deps', {}))
         self.build_deps = DevDeps(build=config['build-system'].get('requires', []))
 
-        self.build_backend = config['build-system']['build-backend']
-        self.backend_path = config['build-system'].get('backend-path', None)
+        config = config.get('tool', {}).get('chakra', {})
+
+        self.env = Environment(Path(config.get('env', '.venv')))
+        self.build_env = Environment(Path(config.get('build-env', '.build-venv')))
+        self.dev_deps = DevDeps(**config.get('dev-deps', {}))
 
     def __repr__(self):
         return (
             f'{self.__class__.__name__}(metadata={self.metadata!r}, env={self.env!r}, '
             f'build_env={self.build_env!r}, dev_deps={self.dev_deps!r}, '
-            f'build_deps={self.build_deps!r}, build_backend={self.build_backend!r}, '
-            f'backend_path={self.backend_path!r})'
+            f'build_deps={self.build_deps!r})'
         )

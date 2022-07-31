@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra.core import Command, Config, DevDeps, Environment, Hook, ParamCommand
+from chakra.core import Command, Config, DevDeps, Environment, Hook
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -177,54 +177,6 @@ class TestHook(unittest.TestCase):
 
             with self.assertRaises(RuntimeError):
                 Hook(Path('foo.bat')).run()
-
-
-class TestParamCommand(unittest.TestCase):
-
-    def test_echo(self):
-        """Run a parameterized `echo` command."""
-
-        command = ParamCommand(
-            'echo', positional_args=['{word}'], env_vars={'WORD': '{word}'})
-        result = command.run(word='foo')
-        assert result.stdout.strip() == 'foo'
-        assert os.environ['WORD'] == 'foo'
-
-        result = command.run(word='bar')
-        assert result.stdout.strip() == 'bar'
-        assert os.environ['WORD'] == 'bar'
-
-    def test_python_c(self):
-        """Run a parameterized `python -c` command."""
-
-        command = ParamCommand(
-            'python',
-            optional_args={'-c': "print('{text1}', '{text2}')"},
-            env_vars={'TEXT1': '*{text1}*', 'TEXT2': '*{text2}*'},
-        )
-        result = command.run(text1='foo', text2='bar')
-        assert result.stdout.strip() == 'foo bar'
-        assert os.environ['TEXT1'] == '*foo*'
-        assert os.environ['TEXT2'] == '*bar*'
-
-        result = command.run(text1='bar', text2='foo')
-        assert result.stdout.strip() == 'bar foo'
-        assert os.environ['TEXT1'] == '*bar*'
-        assert os.environ['TEXT2'] == '*foo*'
-
-    def test_ls(self):
-        """Run an `ls` command which is badly parameterized."""
-
-        command = ParamCommand('ls', flags=['-{flag}'])
-        with self.assertRaises(subprocess.CalledProcessError) as exc:
-            command.run(flag='l')
-
-    def test_pip(self):
-        """Run a `pip` command which is badly parameterized."""
-
-        command = ParamCommand('pip', subcommand='{subcommand}')
-        with self.assertRaises(subprocess.CalledProcessError) as exc:
-            command.run(subcommand='list')
 
 
 class TestDevDeps(unittest.TestCase):
