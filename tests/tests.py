@@ -16,7 +16,7 @@ class TestCommand(unittest.TestCase):
     def test_echo(self):
         """Run an `echo` command."""
 
-        result = Command('echo', positional_args=['foo']).run()
+        result = Command(['echo', 'foo']).run()
         assert result.returncode == 0
         assert result.stdout.strip() == 'foo'
         assert result.stderr.strip() == ''
@@ -25,7 +25,7 @@ class TestCommand(unittest.TestCase):
     def test_ls(self):
         """Run an `ls -lh` command."""
 
-        result = Command('ls', flags=['-l', '-h']).run()
+        result = Command(['ls', '-l', '-h']).run()
 
         assert result.returncode == 0
 
@@ -43,7 +43,7 @@ class TestCommand(unittest.TestCase):
 
             # `mkdir` against an existing directory will always throw an error.
             with self.assertRaises(subprocess.CalledProcessError) as exc:
-                Command('mkdir', positional_args=['foo']).run()
+                Command(['mkdir', 'foo']).run()
 
         exc = exc.exception
         assert exc.returncode != 0
@@ -53,7 +53,7 @@ class TestCommand(unittest.TestCase):
     def test_python_c(self):
         """Run a `python -c` command."""
 
-        result = Command('python', optional_args={'-c': "print('Hello, world!')"}).run()
+        result = Command(['python', '-c', "print('Hello, world!')"]).run()
         assert result.returncode == 0
         assert result.stdout.strip() == 'Hello, world!'
         assert result.stderr.strip() == ''
@@ -63,14 +63,9 @@ class TestCommand(unittest.TestCase):
 
         with self.assertRaises(subprocess.CalledProcessError) as exc:
             command = Command(
-                'pip',
-                subcommand='install',
-                positional_args=['foo', 'bar', 'baz'],
-                optional_args={
-                    '--find-links': Path('/foo/bar').as_uri(),
-                    '--progress-bar': 'off',
-                },
-                flags=['--isolated', '--no-color'],
+                ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
+                 Path('/foo/bar').as_uri(), '--progress-bar', 'off', '--isolated',
+                 '--no-color']
             )
             command.run()
 
@@ -86,7 +81,7 @@ class TestCommand(unittest.TestCase):
     def test_python_m(self):
         """Run a `python -m` command."""
 
-        result = Command('python', optional_args={'-m': 'unittest discover -h'}).run()
+        result = Command(['python', '-m', 'unittest', 'discover', '-h']).run()
         assert result.returncode == 0
         assert result.stdout.strip().startswith('usage: python -m unittest discover')
         assert result.stderr.strip() == ''
@@ -95,13 +90,13 @@ class TestCommand(unittest.TestCase):
         """Run an invalid command, i.e. a command that does not exist."""
 
         with self.assertRaises(FileNotFoundError):
-            Command('foo').run()
+            Command(['foo']).run()
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_env_vars_sh(self):
         """Verify that environment variables are accessible to the command."""
 
-        command = Command('/bin/sh', optional_args={'-c': 'echo $FOO $BAR'},
+        command = Command(['/bin/sh', '-c', 'echo $FOO $BAR'],
                           env_vars={'FOO': 'bar', 'BAR': 'foo'})
         result = command.run()
         assert result.stdout.strip() == 'bar foo'
@@ -110,7 +105,7 @@ class TestCommand(unittest.TestCase):
     def test_env_vars_powershell(self):
         """Verify that environment variables are accessible to the command."""
 
-        command = Command('pwsh', optional_args={'-Command': 'echo $env:Foo $env:Bar'},
+        command = Command(['pwsh', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run()
         assert result.stdout.strip() == 'bar foo'
@@ -184,9 +179,8 @@ class TestEnvironment(unittest.TestCase):
             # are being run can interfere with this test.
 
             env = Environment(Path('.venv'))
-            assert env.create_command == Command('virtualenv', positional_args=['.venv'],
-                                                 optional_args={'--activators': 'python'},
-                                                 flags=['--download'])
+            assert env.create_command == Command(
+                ['virtualenv', '.venv', '--activators', 'python', '--download'])
 
     @unittest.expectedFailure
     def test_path_is_a_path(self):
