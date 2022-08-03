@@ -4,10 +4,31 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra import Command, DevDeps, Environment
+from chakra.core import Command, Environment, Hook
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
+
+
+def make_directories(structure, at=Path('.')):
+    """Create a directory structure.
+
+    For documentation on how this works, please refer: tests/make_directories.md
+    """
+
+    if isinstance(structure, tuple):
+        dir_name = structure[0]
+        dir_path = at / Path(dir_name)
+        dir_path.mkdir()
+        make_directories(structure[1], at=dir_path)
+
+    elif isinstance(structure, list):
+        for s in structure:
+            make_directories(s, at=at)
+
+    # it must be a string, i.e. a file name.
+    else:
+        (at / Path(structure)).touch()
 
 
 class TestCommand(unittest.TestCase):
@@ -34,6 +55,7 @@ class TestCommand(unittest.TestCase):
 
         assert result.stderr.strip() == ''
 
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_mkdir(self):
         """Run a `mkdir` command against an existing directory."""
 
@@ -59,13 +81,13 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file:///foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
 
         with self.assertRaises(subprocess.CalledProcessError) as exc:
             command = Command(
-                ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
-                 Path('/foo/bar').as_uri(), '--progress-bar', 'off', '--isolated',
-                 '--no-color']
+                ['pip', 'install', 'foo', 'bar', 'baz',
+                 '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
+                 '--progress-bar', 'off', '--isolated', '--no-color']
             )
             command.run()
 
@@ -105,34 +127,71 @@ class TestCommand(unittest.TestCase):
     def test_env_vars_powershell(self):
         """Verify that environment variables are accessible to the command."""
 
-        command = Command(['pwsh', '-Command', 'echo $env:Foo $env:Bar'],
+        command = Command(['powershell', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run()
-        assert result.stdout.strip() == 'bar foo'
+        assert result.stdout.strip() == 'bar\nfoo'
 
 
-class TestDevDeps(unittest.TestCase):
+class TestHook(unittest.TestCase):
 
-    def test_sample(self):
-        """A sample set of development dependencies."""
+    def test_python(self):
+        """Test a Python hook."""
 
-        dev_deps = DevDeps(
-            docs=['sphinx'], checks=['mypy', 'flake8', 'black'], tests=['pytest'])
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.py', 'w') as f:
+                f.write("print('foo')")
+            result = Hook(Path('foo.py')).run()
 
-        with dev_deps.requirements_txt() as requirements_txt:
-            with open(requirements_txt.name, 'r') as f:
-                contents = [line.strip() for line in f.readlines()]
+        assert result.stdout.strip() == 'foo'
 
-        assert contents == ['sphinx', 'mypy', 'flake8', 'black', 'pytest']
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    def test_bash(self):
+        """Test a Bash hook."""
 
-    def test_empty(self):
-        """No development dependencies."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo', 'w') as f:
+                f.write("#!/bin/bash\n\necho 'foo'")
+            result = Hook(Path('foo')).run()
 
-        dev_deps = DevDeps()
+        assert result.stdout.strip() == 'foo'
 
-        with dev_deps.requirements_txt() as requirements_txt:
-            with open(requirements_txt.name, 'r') as f:
-                assert f.read() == ''
+    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    def test_bash_sh_extension(self):
+        """Test a Bash hook with an `.sh` extension."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.sh', 'w') as f:
+                f.write("#!/bin/bash\n\necho 'foo'")
+            result = Hook(Path('foo.sh')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    def test_powershell(self):
+        """Test a Powershell hook."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.ps1', 'w') as f:
+                f.write("echo 'foo'")
+            result = Hook(Path('foo.ps1')).run()
+
+        assert result.stdout.strip() == 'foo'
+
+    def test_unsupported(self):
+        """Test a hook with an unsupported extension."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            with open('foo.bat', 'w') as f:
+                f.write('dir')
+
+            with self.assertRaises(RuntimeError):
+                Hook(Path('foo.bat')).run()
 
 
 class TestEnvironment(unittest.TestCase):
@@ -186,13 +245,3 @@ class TestEnvironment(unittest.TestCase):
     def test_path_is_a_path(self):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
-
-    def test_create_on_path_exists(self):
-        """Trying to create an environment at an existing path."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
-            env_path.mkdir()
-
-            with self.assertRaises(RuntimeError):
-                Environment(env_path).create_command.run()
