@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 
-from .core import Command, Config
+from .config import Config
+from .core import Command
 from .backend import build_editable
 
 
@@ -20,9 +21,7 @@ def cli():
         config.build_env.activate()
 
         with config.build_deps.requirements_txt() as requirements_txt:
-            Command(
-                'pip', subcommand='install', optional_args={'-r': requirements_txt.name}
-            ).run()
+            Command(['pip', 'install', '-r', requirements_txt.name]).run()
 
         build_editable(Path.cwd())
 
@@ -30,3 +29,7 @@ def cli():
 
     else:
         pass
+
+
+if __name__ == '__main__':
+    cli()
