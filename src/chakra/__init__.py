@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -17,6 +18,9 @@ class Command:
             f'{self.__class__.__name__}(tokens={self.tokens!r}, '
             f'env_vars={self.env_vars!r}, description={self.description!r})'
         )
+
+    def __str__(self):
+        return shlex.join(self.tokens)
 
     def __eq__(self, other):
         return repr(self) == repr(other)
