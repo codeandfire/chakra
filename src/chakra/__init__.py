@@ -52,16 +52,22 @@ class Environment:
         assert isinstance(path, Path), 'path must be a pathlib.Path object'
         self.path = path
 
-        if os.name == 'posix':
-            self._bin = self.path / Path('bin')
-        else:
-            self._bin = self.path / Path('Scripts')
-
-        self._activate_script = self._bin / Path('activate_this.py')
-        self.python_executable = self._bin / Path('python')
-
     def __repr__(self):
         return f'{self.__class__.__name__}({self.path})'
+
+    @property
+    def _activate_script(self):
+        if os.name == 'posix':
+            return self.path / Path('bin') / Path('activate_this.py')
+        else:
+            return self.path / Path('Scripts') / Path('activate_this.py')
+
+    @property
+    def python_executable(self):
+        if os.name == 'posix':
+            return self.path / Path('bin') / Path('python')
+        else:
+            return self.path / Path('Scripts') / Path('python')
 
     @property
     def create_command(self):
