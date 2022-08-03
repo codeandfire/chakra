@@ -60,7 +60,7 @@ class Environment:
         self.is_activated = False
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.path})'
+        return f'{self.__class__.__name__}({self.path}, is_activated={self.is_activated})'
 
     @property
     def create_command(self):
