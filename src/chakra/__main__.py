@@ -7,10 +7,12 @@ from .backend import build_editable
 
 
 def cli():
-    parser = argparse.ArgumentParser(description='Chakra CLI.')
-    subparsers = parser.add_subparsers(title='commands', dest='command')
+    parser = argparse.ArgumentParser('chakra', description='Chakra CLI.')
+    subparsers = parser.add_subparsers(
+        title='commands', dest='command', help='run workflows', required=True)
 
-    build_parser = subparsers.add_parser('build', description='Build a wheel.')
+    build_parser = subparsers.add_parser(
+        'build', description='Build an sdist and/or a wheel.')
 
     args = parser.parse_args()
 
