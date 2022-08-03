@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra.core import Command, DevDeps, Environment, Hook
+from chakra.core import Command, Environment, Hook
 
 # load a patched version of `tempfile`.
 from tempfile_patch import tempfile
@@ -194,30 +194,6 @@ class TestHook(unittest.TestCase):
                 Hook(Path('foo.bat')).run()
 
 
-class TestDevDeps(unittest.TestCase):
-
-    def test_sample(self):
-        """A sample set of development dependencies."""
-
-        dev_deps = DevDeps(
-            docs=['sphinx'], checks=['mypy', 'flake8', 'black'], tests=['pytest'])
-
-        with dev_deps.requirements_txt() as requirements_txt:
-            with open(requirements_txt.name, 'r') as f:
-                contents = [line.strip() for line in f.readlines()]
-
-        assert contents == ['sphinx', 'mypy', 'flake8', 'black', 'pytest']
-
-    def test_empty(self):
-        """No development dependencies."""
-
-        dev_deps = DevDeps()
-
-        with dev_deps.requirements_txt() as requirements_txt:
-            with open(requirements_txt.name, 'r') as f:
-                assert f.read() == ''
-
-
 class TestEnvironment(unittest.TestCase):
 
     def test_create_and_activate(self):
@@ -269,13 +245,3 @@ class TestEnvironment(unittest.TestCase):
     def test_path_is_a_path(self):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
-
-    def test_create_on_path_exists(self):
-        """Trying to create an environment at an existing path."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
-            env_path.mkdir()
-
-            with self.assertRaises(RuntimeError):
-                Environment(env_path).create_command.run()

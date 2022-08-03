@@ -27,7 +27,7 @@ class TestConfig(unittest.TestCase):
                     where = ["src"]
 
                     [tool.chakra]
-                    env = "env"
+                    env-dir = "my-envs"
 
                     [tool.chakra.dev-deps]
                     docs = ["sphinx"]
@@ -43,10 +43,8 @@ class TestConfig(unittest.TestCase):
         metadata_text = config.metadata.text()
         assert len(metadata_text.strip().split('\n')) == 3
 
-        assert config.env.path == Path('env')
-        assert config.build_env.path == Path('.build-venv')
+        assert config.env_dir == Path('my-envs')
 
         assert config.dev_deps['docs'] == ['sphinx']
         assert config.dev_deps['lint'] == ['mypy', 'flake8']
-
-        assert config.build_deps['build'] == ['bar', 'baz']
+        assert config.dev_deps['build'] == ['bar', 'baz']

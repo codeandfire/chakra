@@ -2,7 +2,6 @@ import glob
 import os
 import shutil
 import subprocess
-from .tempfile_patch import tempfile
 from pathlib import Path
 
 from pyproject_metadata import StandardMetadata
@@ -63,26 +62,6 @@ class Hook(Command):
         )
 
 
-class DevDeps(object):
-    """Development dependencies."""
-
-    def __init__(self, **kwargs):
-        self._deps = kwargs
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self._deps!r})'
-
-    def __getitem__(self, key):
-        return self._deps[key]
-
-    def requirements_txt(self):
-        temp_file = tempfile.NamedTemporaryFile()
-        with open(temp_file.name, 'w') as f:
-            f.write(
-                '\n'.join([dep for dep_list in self._deps.values() for dep in dep_list]))
-        return temp_file
-
-
 class Environment(object):
     """A virtual environment."""
 
@@ -105,9 +84,6 @@ class Environment(object):
 
     @property
     def create_command(self):
-        if self.path.exists():
-            raise RuntimeError(f'{self.path} already exists!')
-
         return Command(
             ['virtualenv', str(self.path), '--activators', 'python', '--download'])
 

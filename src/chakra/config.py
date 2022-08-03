@@ -4,7 +4,7 @@ except ModuleNotFoundError:
     import tomli as tomllib
 from pathlib import Path
 
-from .core import DevDeps, Environment, Metadata, Source
+from .core import Environment, Metadata, Source
 
 
 class Config(object):
@@ -16,13 +16,13 @@ class Config(object):
 
         self.metadata = Metadata(config)
 
-        self.build_deps = DevDeps(build=config['build-system'].get('requires', []))
+        build_deps = config['build-system'].get('requires', [])
 
         config = config.get('tool', {}).get('chakra', {})
 
-        self.env = Environment(Path(config.get('env', '.venv')))
-        self.build_env = Environment(Path(config.get('build-env', '.build-venv')))
-        self.dev_deps = DevDeps(**config.get('dev-deps', {}))
+        self.env_dir = Path(config.get('env-dir', '.envs'))
+        self.dev_deps = config.get('dev-deps', {})
+        self.dev_deps['build'] = build_deps
 
         source_config = config['source']
         self.source = Source(source_config['packages'])
@@ -34,7 +34,6 @@ class Config(object):
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}(metadata={self.metadata!r}, env={self.env!r}, '
-            f'build_env={self.build_env!r}, dev_deps={self.dev_deps!r}, '
-            f'build_deps={self.build_deps!r})'
+            f'{self.__class__.__name__}(metadata={self.metadata!r}, '
+            f'env_dir={self.env_dir!r}, dev_deps={self.dev_deps!r})'
         )
