@@ -40,8 +40,7 @@ class Hook(Command):
         if self.script_path.suffix == '.ps1':
             self.interpreter = 'powershell'
 
-            super().__init__(
-                command=self.interpreter, optional_args={'-File': str(self.script_path)})
+            super().__init__([self.interpreter, '-File', str(self.script_path)])
 
         else:
             if self.script_path.suffix == '.py':
@@ -55,8 +54,7 @@ class Hook(Command):
                     "extension) and Powershell ('.ps1' extension) scripts are supported."
                 )
 
-            super().__init__(
-                command=self.interpreter, positional_args=[str(self.script_path)])
+            super().__init__([self.interpreter, str(self.script_path)])
 
     def __repr__(self):
         return (
