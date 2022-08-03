@@ -7,19 +7,16 @@ from pathlib import Path
 class Command:
     """A shell command."""
 
-    def __init__(self, tokens, env_vars={}, description=''):
+    def __init__(self, tokens, env_vars={}):
         self.tokens = tokens
         self.env_vars = env_vars
-        self.description = description
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}(tokens={self.tokens!r}, '
-            f'env_vars={self.env_vars!r}, description={self.description!r})'
-        )
+        return \
+            f'{self.__class__.__name__}(tokens={self.tokens!r}, env_vars={self.env_vars!r})'
 
     def __eq__(self, other):
-        return repr(self) == repr(other)
+        return self.tokens == other.tokens and self.env_vars == other.env_vars
 
     def run(self):
         for name, value in self.env_vars.items():
