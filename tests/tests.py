@@ -59,13 +59,12 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file:///foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
 
         with self.assertRaises(subprocess.CalledProcessError) as exc:
             command = Command(
                 ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
-                 Path('/foo/bar').as_uri(), '--progress-bar', 'off', '--isolated',
-                 '--no-color']
+                 Path('/foo/bar').as_uri()],
             )
             command.run()
 
