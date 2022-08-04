@@ -80,12 +80,11 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install --user foo bar baz --find-links file:///foo/bar`."""
 
         result = Command(
-            ['pip', 'install', 'foo', 'bar', 'baz',
-             '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
-             '--progress-bar', 'off', '--isolated', '--no-color']
+            ['pip', 'install', '--user', 'foo', 'bar', 'baz', '--find-links',
+             Path('/foo/bar').as_uri()],
         ).run(capture_output=True)
 
         assert result.returncode != 0
@@ -93,9 +92,6 @@ class TestCommand(unittest.TestCase):
         for line in result.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
-    # NOTE: this test is currently failing. Shows how we are not able to support `python
-    # -m` commands yet.
-    @unittest.skip('currently not working')
     def test_python_m(self):
         """Run a `python -m` command."""
 
@@ -219,26 +215,6 @@ class TestEnvironment(unittest.TestCase):
             # post-activation, at least one of the paths in `PYTHONPATH` (i.e. `sys.path`)
             # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
-
-    def test_create_command(self):
-        """Test the command used to create the environment.
-
-        While the test above just tests if the environment is created (and activated),
-        this test checks the actual command used for creating the environment, i.e. flags
-        and arguments passed to the `virtualenv` command are also checked. Therefore this
-        test is relevant.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-
-            # Why is a temporary directory, and cd'ing into it required here? Because the
-            # presence of a .venv directory within the directory from which these tests
-            # are being run can interfere with this test.
-
-            env = Environment(Path('.venv'))
-            assert env.create_command == Command(
-                ['virtualenv', '.venv', '--activators', 'python', '--download'])
 
     @unittest.expectedFailure
     def test_path_is_a_path(self):
