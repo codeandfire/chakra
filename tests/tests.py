@@ -75,9 +75,6 @@ class TestCommand(unittest.TestCase):
         for line in exc.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
-    # NOTE: this test is currently failing. Shows how we are not able to support `python
-    # -m` commands yet.
-    @unittest.skip('currently not working')
     def test_python_m(self):
         """Run a `python -m` command."""
 
