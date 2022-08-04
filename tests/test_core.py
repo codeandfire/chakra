@@ -80,10 +80,10 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install --user foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
 
         result = Command(
-            ['pip', 'install', 'foo', 'bar', 'baz',
+            ['pip', 'install', '--user', 'foo', 'bar', 'baz',
              '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
              '--progress-bar', 'off', '--isolated', '--no-color']
         ).run(capture_output=True)
