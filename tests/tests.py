@@ -82,26 +82,6 @@ class TestEnvironment(unittest.TestCase):
             # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
 
-    def test_create_command(self):
-        """Test the command used to create the environment.
-
-        While the test above just tests if the environment is created (and activated),
-        this test checks the actual command used for creating the environment, i.e. flags
-        and arguments passed to the `virtualenv` command are also checked. Therefore this
-        test is relevant.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-
-            # Why is a temporary directory, and cd'ing into it required here? Because the
-            # presence of a .venv directory within the directory from which these tests
-            # are being run can interfere with this test.
-
-            env = Environment(Path('.venv'))
-            assert env.create_command == \
-                Command('virtualenv .venv --download --activators python')
-
     @unittest.expectedFailure
     def test_path_is_a_path(self):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
