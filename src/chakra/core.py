@@ -9,7 +9,7 @@ from pathlib import Path
 from pyproject_metadata import StandardMetadata
 
 
-def _subprocess_run(args, capture_output=False, **kwargs):
+def _subprocess_run(args, capture_output=False, env=None, **kwargs):
     """A simple wrapper around `subprocess.run()` with `shell=False` and `check=False`.
 
     This wrapper basically transforms any `FileNotFoundError` exception that may be raised
@@ -19,7 +19,8 @@ def _subprocess_run(args, capture_output=False, **kwargs):
 
     try:
         return subprocess.run(
-            args, shell=False, check=False, capture_output=capture_output, **kwargs)
+            args, shell=False, check=False, capture_output=capture_output, env=env,
+            **kwargs)
 
     except FileNotFoundError as exc:
 
@@ -58,9 +59,8 @@ class Command(object):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
     def run(self, capture_output=False):
-        for name, value in self.env_vars.items():
-            os.environ[name] = value
-        return _subprocess_run(self.tokens, capture_output=capture_output, text=True)
+        return _subprocess_run(
+            self.tokens, capture_output=capture_output, env=self.env_vars, text=True)
 
 
 class Hook(Command):
