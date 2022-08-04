@@ -92,9 +92,6 @@ class TestCommand(unittest.TestCase):
         for line in result.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
-    # NOTE: this test is currently failing. Shows how we are not able to support `python
-    # -m` commands yet.
-    @unittest.skip('currently not working')
     def test_python_m(self):
         """Run a `python -m` command."""
 
@@ -223,3 +220,23 @@ class TestEnvironment(unittest.TestCase):
     def test_path_is_a_path(self):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
+
+
+class TestCommandUnderEnvironment(unittest.TestCase):
+
+    def test(self):
+        """Test a command run under an environment."""
+
+        command = Command(['pip', 'freeze'])
+
+        result = command.run(capture_output=True)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(Path(env_path))
+            env.create_command.run(capture_output=True)
+            env.activate()
+
+            new_result = command.run(capture_output=True)
+
+        assert result.stdout != new_result.stdout

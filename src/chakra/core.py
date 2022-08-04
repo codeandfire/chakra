@@ -59,8 +59,12 @@ class Command(object):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
     def run(self, capture_output=False):
+        # pass the current PATH.
+        env_vars = self.env_vars.copy()
+        env_vars['PATH'] = os.environ['PATH']
+
         return _subprocess_run(
-            self.tokens, capture_output=capture_output, env=self.env_vars, text=True)
+            self.tokens, capture_output=capture_output, env=env_vars, text=True)
 
 
 class Hook(Command):
