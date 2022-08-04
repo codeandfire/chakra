@@ -64,13 +64,11 @@ class TestCommand(unittest.TestCase):
             Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
-            with self.assertRaises(subprocess.CalledProcessError) as exc:
-                Command(['mkdir', 'foo']).run(capture_output=True)
+            result = Command(['mkdir', 'foo']).run(capture_output=True)
 
-        exc = exc.exception
-        assert exc.returncode != 0
-        assert exc.stdout.strip() == ''
-        assert exc.stderr.strip() != ''
+        assert result.returncode != 0
+        assert result.stdout.strip() == ''
+        assert result.stderr.strip() != ''
 
     def test_python_c(self):
         """Run a `python -c` command."""
@@ -84,18 +82,15 @@ class TestCommand(unittest.TestCase):
     def test_pip(self):
         """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
 
-        with self.assertRaises(subprocess.CalledProcessError) as exc:
-            command = Command(
-                ['pip', 'install', 'foo', 'bar', 'baz',
-                 '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
-                 '--progress-bar', 'off', '--isolated', '--no-color']
-            )
-            command.run(capture_output=True)
+        result = Command(
+            ['pip', 'install', 'foo', 'bar', 'baz',
+             '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
+             '--progress-bar', 'off', '--isolated', '--no-color']
+        ).run(capture_output=True)
 
-        exc = exc.exception
-        assert exc.returncode != 0
-        assert exc.stdout.strip().startswith('Looking in links:')
-        for line in exc.stderr.strip().split(os.linesep):
+        assert result.returncode != 0
+        assert result.stdout.strip().startswith('Looking in links:')
+        for line in result.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
     # NOTE: this test is currently failing. Shows how we are not able to support `python
@@ -113,8 +108,10 @@ class TestCommand(unittest.TestCase):
     def test_invalid(self):
         """Run an invalid command, i.e. a command that does not exist."""
 
-        with self.assertRaises(FileNotFoundError):
-            Command(['foo']).run(capture_output=True)
+        result = Command(['foo']).run(capture_output=True)
+        assert result.returncode != 0
+        assert result.stdout == ''
+        assert result.stderr.strip() == 'command not found: foo'
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_env_vars_sh(self):

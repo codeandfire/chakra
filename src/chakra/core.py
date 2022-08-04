@@ -3,9 +3,41 @@ import os
 import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from pyproject_metadata import StandardMetadata
+
+
+def _subprocess_run(args, capture_output=False, **kwargs):
+    """A simple wrapper around `subprocess.run()` with `shell=False` and `check=False`.
+
+    This wrapper basically transforms any `FileNotFoundError` exception that may be raised
+    due to the fact that the given command is not found, into a regular
+    `subprocess.CompletedProcess` result.
+    """
+
+    try:
+        return subprocess.run(
+            args, shell=False, check=False, capture_output=capture_output, **kwargs)
+
+    except FileNotFoundError as exc:
+
+        # come up with an error message.
+        # `exc.filename` contains the name of the command that was not found.
+        err = f'command not found: {exc.filename}'
+
+        if not capture_output:
+            print(err, file=sys.stderr)
+            stdout, stderr = None, None
+        else:
+            stdout, stderr = '', err
+
+        # 127 is the exit code returned by the shell in the case of a command not found
+        # error, on all platforms (Linux / Windows / MacOS).
+        # hence the choice of this exit code.
+        return subprocess.CompletedProcess(
+            args=args, returncode=127, stdout=stdout, stderr=stderr)
 
 
 class Command(object):
@@ -28,8 +60,7 @@ class Command(object):
     def run(self, capture_output=False):
         for name, value in self.env_vars.items():
             os.environ[name] = value
-        return subprocess.run(
-            self.tokens, check=True, capture_output=capture_output, text=True)
+        return _subprocess_run(self.tokens, capture_output=capture_output, text=True)
 
 
 class Hook(Command):
