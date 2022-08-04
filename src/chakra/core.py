@@ -25,10 +25,11 @@ class Command(object):
     def __eq__(self, other):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
-    def run(self):
+    def run(self, capture_output=False):
         for name, value in self.env_vars.items():
             os.environ[name] = value
-        return subprocess.run(self.tokens, check=True, capture_output=True, text=True)
+        return subprocess.run(
+            self.tokens, check=True, capture_output=capture_output, text=True)
 
 
 class Hook(Command):
