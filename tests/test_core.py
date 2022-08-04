@@ -80,15 +80,15 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install --user foo bar baz --find-links file:///foo/bar`."""
+        """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
 
         result = Command(
-            ['pip', 'install', '--user', 'foo', 'bar', 'baz', '--find-links',
+            ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
              Path('/foo/bar').as_uri()],
         ).run(capture_output=True)
 
         assert result.returncode != 0
-        assert result.stdout.strip().startswith('Looking in links:')
+        assert 'Looking in links:' in result.stdout.strip()
         for line in result.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
