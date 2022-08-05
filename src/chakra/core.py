@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import virtualenv
 from pyproject_metadata import StandardMetadata
 
 
@@ -99,6 +100,19 @@ class Hook(Command):
         )
 
 
+def _virtualenv_cli_run(dest, prompt=None, python=None):
+    """Wrapper around the `virtualenv` module's environment creation API."""
+
+    tokens = [dest]
+    tokens += ['--quiet', '--download', '--activators', 'python']
+    if prompt is not None:
+        tokens += ['--prompt', prompt]
+    if python is not None:
+        tokens += ['--python', python]
+
+    virtualenv.cli_run(tokens)
+
+
 class Environment(object):
     """A virtual environment."""
 
@@ -126,10 +140,8 @@ class Environment(object):
         else:
             return self.path / Path('Scripts') / Path('python')
 
-    @property
-    def create_command(self):
-        return Command(
-            ['virtualenv', str(self.path), '--activators', 'python', '--download'])
+    def create(self):
+        _virtualenv_cli_run(dest=str(self.path), prompt=self.path.name)
 
     def activate(self):
         self.is_activated = True

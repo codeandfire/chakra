@@ -1,13 +1,13 @@
 import os
 import subprocess
 import sys
+from tempfile_patch import tempfile
 import unittest
 from pathlib import Path
 
-from chakra.core import Command, Environment, Hook
+import virtualenv
 
-# load a patched version of `tempfile`.
-from tempfile_patch import tempfile
+from chakra.core import Command, Environment, Hook
 
 
 def make_directories(structure, at=Path('.')):
@@ -191,18 +191,35 @@ class TestHook(unittest.TestCase):
 
 class TestEnvironment(unittest.TestCase):
 
-    def test_create_and_activate(self):
-        """Test if creation and activation of an environment works.
-
-        This test takes a little time because of the time spent in creating the
-        environment.
-        """
+    def test_create(self):
+        """Test creation of an environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
+            env.create()
 
-            env.create_command.run(capture_output=True)
+            assert env_path.exists()
+            assert (env_path / Path('bin')).exists()
+            assert (env_path / Path('lib')).exists()
+            assert (env_path / Path('pyvenv.cfg')).exists()
+
+    def test_activate(self):
+        """Test if activation of an environment works.
+
+        This test works by checking the value of `PATH` before and after activating the
+        environment. After activating the environment, `PATH` should contain some
+        directories that are relative to the directory of the environment.
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # create an environment by directly accessing the `virtualenv` module's API.
+            env_path = Path(temp_dir) / Path('.venv')
+            virtualenv.cli_run([str(env_path)])
+
+            env = Environment(env_path)
+
+            env.create()
             assert not env.is_activated
 
             # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
