@@ -72,13 +72,13 @@ class TestEnvironment(unittest.TestCase):
             env = Environment(env_path)
             env.create_command.run()
 
-            # pre-activation, none of the paths in `PYTHONPATH` (i.e. `sys.path`) should
+            # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
             # have anything to do with the created environment.
             assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
 
-            # post-activation, at least one of the paths in `PYTHONPATH` (i.e. `sys.path`)
+            # post-activation, at least one of the paths in `PATH` (i.e. `sys.path`)
             # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
 
