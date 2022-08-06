@@ -108,27 +108,36 @@ class Metadata(object):
 class Config(object):
     """Configuration from `pyproject.toml`."""
 
-    def __init__(self, config_file=Path('pyproject.toml')):
-        with open(config_file, 'rb') as f:
+    def __init__(self, metadata, env_dir, dev_deps, source):
+        self.metadata = metadata
+        self.env_dir = env_dir
+        self.dev_deps = dev_deps
+        self.source = source
+
+    @classmethod
+    def load(cls, pyproject_file='pyproject.toml'):
+        with open(pyproject_file, 'rb') as f:
             config = tomllib.load(f)
 
-        self.metadata = Metadata.load()
+        metadata = Metadata.load()
 
         build_deps = config['build-system'].get('requires', [])
 
         config = config.get('tool', {}).get('chakra', {})
 
-        self.env_dir = Path(config.get('env-dir', '.envs'))
-        self.dev_deps = config.get('dev-deps', {})
-        self.dev_deps['build'] = build_deps
+        env_dir = Path(config.get('env-dir', '.envs'))
+        dev_deps = config.get('dev-deps', {})
+        dev_deps['build'] = build_deps
 
         source_config = config['source']
-        self.source = Source(source_config['packages'])
+        source = Source(source_config['packages'])
 
         for glob in source_config.get('include', []):
-            self.source.include(glob)
+            source.include(glob)
         for glob in source_config.get('exclude', []):
-            self.source.exclude(glob)
+            source.exclude(glob)
+
+        return Config(metadata, env_dir, dev_deps, source)
 
     def __repr__(self):
         return (
