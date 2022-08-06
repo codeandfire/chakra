@@ -28,53 +28,76 @@ def _write_rfc822(headers, body=None):
 class Metadata(object):
     """Core metadata."""
 
-    def __init__(self, config_file=Path('pyproject.toml')):
-        with open(config_file, 'rb') as f:
+    def __init__(self, metadata_version, name, version, summary, description,
+                 description_content_type, requires_python, license_, author,
+                 author_email, maintainer, maintainer_email, keywords, classifier,
+                 project_url, requires_dist, provides_extra):
+        self.metadata_version = metadata_version
+        self.name = name
+        self.version = version
+        self.summary = summary
+        self.description = description
+        self.description_content_type = description_content_type
+        self.requires_python = requires_python
+        self.license = license_
+        self.author = author
+        self.author_email = author_email
+        self.maintainer = maintainer
+        self.maintainer_email = maintainer_email
+        self.keywords = keywords
+        self.classifier = classifier
+        self.project_url = project_url
+        self.requires_dist = requires_dist
+        self.provides_extra = provides_extra
+
+    @classmethod
+    def load(cls, pyproject_file='pyproject.toml'):
+        with open(pyproject_file, 'rb') as f:
             config = tomllib.load(f)
 
         config = config.get('project', {})
 
-        self.metadata_version = '2.1'
+        metadata_version = '2.1'
 
-        self.name = config.get('name', None)
-        self.version = config.get('version', None)
-        self.summary = config.get('description', None)
+        name = config.get('name', None)
+        version = config.get('version', None)
+        summary = config.get('description', None)
 
-        self.description = config.get('readme', {})
+        description = config.get('readme', {})
         try:
-            self.description = Path(self.description)
+            description = Path(description)
 
         except TypeError:
             try:
-                self.description = Path(self.description['file']).read_text()
+                description = Path(description['file']).read_text()
             except KeyError:
                 try:
-                    self.description = self.description['text']
+                    description = description['text']
                 except KeyError:
-                    self.description = None
-                    self.description_content_type = None
-            self.description_content_type = self.description['content-type']
+                    description = None
+                    description_content_type = None
+            description_content_type = description['content-type']
 
         else:
-            if self.description.suffix == '.rst':
-                self.description_content_type = 'text/x-rst'
-            elif self.description.suffix == '.md':
-                self.description_content_type = 'text/markdown'
-            elif self.description.suffix == '':
-                self.description_content_type = 'text/plain'
+            if description.suffix == '.rst':
+                description_content_type = 'text/x-rst'
+            elif description.suffix == '.md':
+                description_content_type = 'text/markdown'
+            elif description.suffix == '':
+                description_content_type = 'text/plain'
 
-            self.description = self.description.read_text()
+            description = description.read_text()
 
-        self.requires_python = config.get('requires-python', None)
+        requires_python = config.get('requires-python', None)
 
-        self.license = config.get('license', {})
+        license_ = config.get('license', {})
         try:
-            self.license = Path(self.license['file']).read_text()
+            license_ = Path(license_['file']).read_text()
         except KeyError:
             try:
-                self.license = self.license['text']
+                license_ = license_['text']
             except KeyError:
-                self.license = None
+                license_ = None
 
         def names_and_emails(persons):
             emails = [
@@ -94,29 +117,34 @@ class Metadata(object):
             ]
             return (','.join(names), ','.join(emails))
 
-        self.author, self.author_email = names_and_emails(config.get('authors', []))
-        self.maintainer, self.maintainer_email = \
+        author, author_email = names_and_emails(config.get('authors', []))
+        maintainer, maintainer_email = \
             names_and_emails(config.get('maintainers', []))
 
-        self.keywords = ','.join(config.get('keywords', []))
-        self.classifier = config.get('classifiers', [])
+        keywords = ','.join(config.get('keywords', []))
+        classifier = config.get('classifiers', [])
 
-        self.project_url = config.get('urls', {})
-        self.project_url = [f'{name}, {url}' for name, url in self.project_url.items()]
+        project_url = config.get('urls', {})
+        project_url = [f'{name}, {url}' for name, url in project_url.items()]
 
-        self.requires_dist = config.get('dependencies', [])
+        requires_dist = config.get('dependencies', [])
 
-        self.provides_extra = []
+        provides_extra = []
 
         for name, dependencies in config.get('optional-dependencies', {}).items():
-            self.provides_extra.append(name)
+            provides_extra.append(name)
 
             for dep in dependencies:
                 if ';' not in dep:
                     dep_str = f"{dep} ; extra == '{name}'"
                 else:
                     dep_str = f"{dep} and extra == '{name}'"
-                self.requires_dist.append(dep)
+                requires_dist.append(dep)
+
+        return Metadata(metadata_version, name, version, summary, description,
+                        description_content_type, requires_python, license_, author,
+                        author_email, maintainer, maintainer_email, keywords, classifier,
+                        project_url, requires_dist, provides_extra)
 
     def __repr__(self):
         return (
@@ -152,27 +180,36 @@ class Metadata(object):
 class Config(object):
     """Configuration from `pyproject.toml`."""
 
-    def __init__(self, config_file=Path('pyproject.toml')):
-        with open(config_file, 'rb') as f:
+    def __init__(self, metadata, env_dir, dev_deps, source):
+        self.metadata = metadata
+        self.env_dir = env_dir
+        self.dev_deps = dev_deps
+        self.source = source
+
+    @classmethod
+    def load(cls, pyproject_file='pyproject.toml'):
+        with open(pyproject_file, 'rb') as f:
             config = tomllib.load(f)
 
-        self.metadata = Metadata(config)
+        metadata = Metadata.load()
 
         build_deps = config['build-system'].get('requires', [])
 
         config = config.get('tool', {}).get('chakra', {})
 
-        self.env_dir = Path(config.get('env-dir', '.envs'))
-        self.dev_deps = config.get('dev-deps', {})
-        self.dev_deps['build'] = build_deps
+        env_dir = Path(config.get('env-dir', '.envs'))
+        dev_deps = config.get('dev-deps', {})
+        dev_deps['build'] = build_deps
 
         source_config = config['source']
-        self.source = Source(source_config['packages'])
+        source = Source(source_config['packages'])
 
         for glob in source_config.get('include', []):
-            self.source.include(glob)
+            source.include(glob)
         for glob in source_config.get('exclude', []):
-            self.source.exclude(glob)
+            source.exclude(glob)
+
+        return Config(metadata, env_dir, dev_deps, source)
 
     def __repr__(self):
         return (
