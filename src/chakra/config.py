@@ -42,7 +42,8 @@ class Metadata(object):
 
         self.description = config.get('readme', {})
         try:
-            self.description = Path(self.description).read_text()
+            self.description = Path(self.description)
+
         except TypeError:
             try:
                 self.description = Path(self.description['file']).read_text()
@@ -51,6 +52,18 @@ class Metadata(object):
                     self.description = self.description['text']
                 except KeyError:
                     self.description = None
+                    self.description_content_type = None
+            self.description_content_type = self.description['content-type']
+
+        else:
+            if self.description.suffix == '.rst':
+                self.description_content_type = 'text/x-rst'
+            elif self.description.suffix == '.md':
+                self.description_content_type = 'text/markdown'
+            elif self.description.suffix == '':
+                self.description_content_type = 'text/plain'
+
+            self.description = self.description.read_text()
 
         self.requires_python = config.get('requires-python', None)
 
@@ -63,14 +76,60 @@ class Metadata(object):
             except KeyError:
                 self.license = None
 
+        def names_and_emails(persons):
+            emails = [
+                '{name} <{email}>'.format(name=person['name'], email=person['email'])
+                for person in persons
+                if 'name' in person.keys() and 'email' in person.keys()
+            ]
+            emails += [
+                person['email']
+                for person in persons
+                if 'name' not in person.keys() and 'email' in person.keys()
+            ]
+            names = [
+                person['name']
+                for person in persons
+                if 'name' in person.keys() and 'email' not in person.keys()
+            ]
+            return (','.join(names), ','.join(emails))
+
+        self.author, self.author_email = names_and_emails(config.get('authors', []))
+        self.maintainer, self.maintainer_email = \
+            names_and_emails(config.get('maintainers', []))
+
+        self.keywords = ','.join(config.get('keywords', []))
+        self.classifier = config.get('classifiers', [])
+
+        self.project_url = config.get('urls', {})
+        self.project_url = [f'{name}, {url}' for name, url in self.project_url.items()]
+
         self.requires_dist = config.get('dependencies', [])
+
+        self.provides_extra = []
+
+        for name, dependencies in config.get('optional-dependencies', {}).items():
+            self.provides_extra.append(name)
+
+            for dep in dependencies:
+                if ';' not in dep:
+                    dep_str = f"{dep} ; extra == '{name}'"
+                else:
+                    dep_str = f"{dep} and extra == '{name}'"
+                self.requires_dist.append(dep)
 
     def __repr__(self):
         return (
             f'{self.__class__.__name__}(metadata_version={self.metadata_version!r}, '
             f'name={self.name!r}, version={self.version!r}, summary={self.summary!r}, '
-            f'description={self.description!r}, requires_python={self.requires_python!r}, '
-            f'license={self.license!r}, requires_dist={self.requires_dist!r})'
+            f'description={self.description!r}, '
+            f'description_content_type={self.description_content_type!r}, '
+            f'requires_python={self.requires_python!r}, license={self.license!r}, '
+            f'author={self.author!r}, author_email={self.author_email!r}, '
+            f'maintainer={self.maintainer!r}, maintainer_email={self.maintainer_email!r}, '
+            f'keywords={self.keywords!r}, classifier={self.classifier!r}, '
+            f'project_url={self.project_url!r}, requires_dist={self.requires_dist!r}, '
+            f'provides_extra={self.provides_extra!r})'
         )
 
     def write(self):
