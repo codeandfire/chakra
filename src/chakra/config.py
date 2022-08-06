@@ -28,42 +28,57 @@ def _write_rfc822(headers, body=None):
 class Metadata(object):
     """Core metadata."""
 
-    def __init__(self, config_file=Path('pyproject.toml')):
-        with open(config_file, 'rb') as f:
+    def __init__(self, metadata_version, name, version, summary, description,
+                 requires_python, license_, requires_dist):
+        self.metadata_version = metadata_version
+        self.name = name
+        self.version = version
+        self.summary = summary
+        self.description = description
+        self.requires_python = requires_python
+        self.license = license_
+        self.requires_dist = requires_dist
+
+    @classmethod
+    def load(cls, pyproject_file='pyproject.toml'):
+        with open(pyproject_file, 'rb') as f:
             config = tomllib.load(f)
 
         config = config.get('project', {})
 
-        self.metadata_version = '2.1'
+        metadata_version = '2.1'
 
-        self.name = config.get('name', None)
-        self.version = config.get('version', None)
-        self.summary = config.get('description', None)
+        name = config.get('name', None)
+        version = config.get('version', None)
+        summary = config.get('description', None)
 
-        self.description = config.get('readme', {})
+        description = config.get('readme', {})
         try:
-            self.description = Path(self.description).read_text()
+            description = Path(description).read_text()
         except TypeError:
             try:
-                self.description = Path(self.description['file']).read_text()
+                description = Path(description['file']).read_text()
             except KeyError:
                 try:
-                    self.description = self.description['text']
+                    description = description['text']
                 except KeyError:
-                    self.description = None
+                    description = None
 
-        self.requires_python = config.get('requires-python', None)
+        requires_python = config.get('requires-python', None)
 
-        self.license = config.get('license', {})
+        license_ = config.get('license', {})
         try:
-            self.license = Path(self.license['file']).read_text()
+            license_ = Path(license_['file']).read_text()
         except KeyError:
             try:
-                self.license = self.license['text']
+                license_ = license_['text']
             except KeyError:
-                self.license = None
+                license_ = None
 
-        self.requires_dist = config.get('dependencies', [])
+        requires_dist = config.get('dependencies', [])
+
+        return Metadata(metadata_version, name, version, summary, description,
+                        requires_python, license_, requires_dist)
 
     def __repr__(self):
         return (
@@ -97,7 +112,7 @@ class Config(object):
         with open(config_file, 'rb') as f:
             config = tomllib.load(f)
 
-        self.metadata = Metadata(config)
+        self.metadata = Metadata.load()
 
         build_deps = config['build-system'].get('requires', [])
 
