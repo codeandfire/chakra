@@ -7,11 +7,7 @@ requires-python = ">=3.7"
 license = { file = "LICENSE" }
 authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
 
-dependencies = [
-	"tomli; python_version<'3.11'",
-	"pyproject-metadata",
-	"virtualenv",
-]
+dependencies = ["tomli; python_version<'3.11'", "virtualenv"]
 
 scripts = { chakra = "chakra:__main__.cli" }
 

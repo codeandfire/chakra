@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import virtualenv
-from pyproject_metadata import StandardMetadata
 
 
 def _subprocess_run(args, capture_output=False, env=None, **kwargs):
@@ -149,26 +148,6 @@ class Environment(object):
 
     def remove(self):
         shutil.rmtree(self.path)
-
-
-class Metadata(object):
-    """Project metadata from `pyproject.toml`.
-
-    This is a very thin wrapper around `pyproject_metadata.StandardMetadata`.
-    """
-
-    def __init__(self, pyproject_config):
-        self._metadata = StandardMetadata.from_pyproject(pyproject_config)
-
-    def __repr__(self):
-        return self._metadata.__repr__().replace(
-            self._metadata.__class__.__name__, self.__class__.__name__)
-
-    def __getattr__(self, attr):
-        return getattr(self._metadata, attr)
-
-    def text(self):
-        return str(self._metadata.as_rfc822())
 
 
 class Source(object):
