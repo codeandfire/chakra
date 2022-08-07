@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import functools
 import io
 try:
     import tomllib
@@ -44,6 +45,19 @@ def _write_ini(data):
     return contents
 
 
+@functools.cache
+def _read_pyproject(file='pyproject.toml'):
+    """Small function to read and parse a `pyproject.toml` file.
+
+    The result of this function is cached by the `functools.cache` decorator above. This
+    prevents repetitive parsing of the contents of `pyproject.toml` by the `.load()`
+    methods of the various classes below.
+    """
+
+    with open(file, 'rb') as f:
+        return tomllib.load(f)
+
+
 class EntryPoints(object):
     """Entry points metadata."""
 
@@ -53,10 +67,8 @@ class EntryPoints(object):
             self._entry_points[key] = value
 
     @classmethod
-    def load(self, pyproject_file='pyproject.toml'):
-        with open(pyproject_file, 'rb') as f:
-            config = tomllib.load(f)
-
+    def load(self, file='pyproject.toml'):
+        config = _read_pyproject(file)
         config = config.get('project', {})
 
         scripts = config.get('scripts', {})
@@ -98,10 +110,8 @@ class Metadata(object):
         self.provides_extra = provides_extra
 
     @classmethod
-    def load(cls, pyproject_file='pyproject.toml'):
-        with open(pyproject_file, 'rb') as f:
-            config = tomllib.load(f)
-
+    def load(cls, file='pyproject.toml'):
+        config = _read_pyproject(file)
         config = config.get('project', {})
 
         metadata_version = '2.1'
@@ -233,9 +243,8 @@ class Config(object):
         self.source = source
 
     @classmethod
-    def load(cls, pyproject_file='pyproject.toml'):
-        with open(pyproject_file, 'rb') as f:
-            config = tomllib.load(f)
+    def load(cls, file='pyproject.toml'):
+        config = _read_pyproject(file)
 
         build_deps = config['build-system'].get('requires', [])
 
