@@ -1,3 +1,6 @@
+from configparser import ConfigParser
+import functools
+import io
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -7,7 +10,7 @@ from pathlib import Path
 from .core import Environment, Source
 
 
-def _write_rfc822(headers, body=None):
+def _write_rfc822(headers, body):
     """Write an RFC 822 message with headers and a body."""
 
     text = []
@@ -19,10 +22,68 @@ def _write_rfc822(headers, body=None):
             for line in lines[1:]:
                 text.append(f'        {line}')
 
-    if body is not None:
-        text.append(body)
+    # leave a line.
+    text.append('')
+
+    text.append(body)
 
     return '\n'.join(text)
+
+
+def _write_ini(data):
+    """Write the given data in INI format."""
+
+    parser = ConfigParser(delimiters=('='))
+    parser.read_dict(data)
+
+    # `ConfigParser` does not provide a method to produce string INI output, i.e. it only
+    # supports writing the INI output to a file.
+    # This code uses a `StringIO` object as a workaround to get string output.
+
+    with io.StringIO() as s:
+        parser.write(s, space_around_delimiters=True)
+        contents = s.getvalue().strip()
+
+    return contents
+
+
+@functools.cache
+def _read_pyproject(file='pyproject.toml'):
+    """Small function to read and parse a `pyproject.toml` file.
+
+    The result of this function is cached by the `functools.cache` decorator above. This
+    prevents repetitive parsing of the contents of `pyproject.toml` by the `.load()`
+    methods of the various classes below.
+    """
+
+    with open(file, 'rb') as f:
+        return tomllib.load(f)
+
+
+class EntryPoints(object):
+    """Entry points metadata."""
+
+    def __init__(self, scripts={}, gui_scripts={}, **kwargs):
+        self._entry_points = {'console_scripts': scripts, 'gui_scripts': gui_scripts}
+        for key, value in kwargs.items():
+            self._entry_points[key] = value
+
+    @classmethod
+    def load(self, file='pyproject.toml'):
+        config = _read_pyproject(file)
+        config = config.get('project', {})
+
+        scripts = config.get('scripts', {})
+        gui_scripts = config.get('gui-scripts', {})
+        entry_points = config.get('entry-points', {})
+
+        return EntryPoints(scripts, gui_scripts, **entry_points)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self._entry_points!r})'
+
+    def write(self):
+        return _write_ini(self._entry_points)
 
 
 class Metadata(object):
@@ -54,10 +115,8 @@ class Metadata(object):
             setattr(self, key, value)
 
     @classmethod
-    def load(cls, pyproject_file='pyproject.toml'):
-        with open(pyproject_file, 'rb') as f:
-            config = tomllib.load(f)
-
+    def load(cls, file='pyproject.toml'):
+        config = _read_pyproject(file)
         config = config.get('project', {})
 
         metadata_version = '2.1'
@@ -181,20 +240,16 @@ class Metadata(object):
 
 
 class Config(object):
-    """Configuration from `pyproject.toml`."""
+    """Chakra-specific configuration from `pyproject.toml`."""
 
-    def __init__(self, metadata, env_dir, dev_deps, source):
-        self.metadata = metadata
+    def __init__(self, env_dir, dev_deps, source):
         self.env_dir = env_dir
         self.dev_deps = dev_deps
         self.source = source
 
     @classmethod
-    def load(cls, pyproject_file='pyproject.toml'):
-        with open(pyproject_file, 'rb') as f:
-            config = tomllib.load(f)
-
-        metadata = Metadata.load()
+    def load(cls, file='pyproject.toml'):
+        config = _read_pyproject(file)
 
         build_deps = config['build-system'].get('requires', [])
 
@@ -212,10 +267,10 @@ class Config(object):
         for glob in source_config.get('exclude', []):
             source.exclude(glob)
 
-        return Config(metadata, env_dir, dev_deps, source)
+        return Config(env_dir, dev_deps, source)
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}(metadata={self.metadata!r}, '
-            f'env_dir={self.env_dir!r}, dev_deps={self.dev_deps!r})'
+            f'{self.__class__.__name__}(env_dir={self.env_dir!r}, '
+            f'dev_deps={self.dev_deps!r}, source={self.source!r})'
         )
