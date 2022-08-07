@@ -32,23 +32,26 @@ class Metadata(object):
                  description_content_type, requires_python, license_, author,
                  author_email, maintainer, maintainer_email, keywords, classifier,
                  project_url, requires_dist, provides_extra):
-        self.metadata_version = metadata_version
-        self.name = name
-        self.version = version
-        self.summary = summary
-        self.description = description
-        self.description_content_type = description_content_type
-        self.requires_python = requires_python
-        self.license = license_
-        self.author = author
-        self.author_email = author_email
-        self.maintainer = maintainer
-        self.maintainer_email = maintainer_email
-        self.keywords = keywords
-        self.classifier = classifier
-        self.project_url = project_url
-        self.requires_dist = requires_dist
-        self.provides_extra = provides_extra
+
+        # the following loop is just a shorter way of writing the following:
+        # self.metadata_version = metadata_version
+        # self.name = name
+        # self.version = version
+        # ...
+        # and so on for all the arguments.
+
+        for key, value in locals().items():
+
+            # the `self` argument should not be assigned as an attribute of itself!
+            if key == 'self':
+                continue
+
+            # the `license_` argument should be converted into the attribute name
+            # `license` without the underscore.
+            elif key == 'license_':
+                key = 'license'
+
+            setattr(self, key, value)
 
     @classmethod
     def load(cls, pyproject_file='pyproject.toml'):
