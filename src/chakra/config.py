@@ -8,10 +8,9 @@ from .core import Environment, Metadata, Source
 
 
 class Config(object):
-    """Configuration from `pyproject.toml`."""
+    """Chakra-specific configuration from `pyproject.toml`."""
 
-    def __init__(self, metadata, env_dir, dev_deps, source):
-        self.metadata = metadata
+    def __init__(self, env_dir, dev_deps, source):
         self.env_dir = env_dir
         self.dev_deps = dev_deps
         self.source = source
@@ -20,8 +19,6 @@ class Config(object):
     def load(cls, pyproject_file='pyproject.toml'):
         with open(pyproject_file, 'rb') as f:
             config = tomllib.load(f)
-
-        metadata = Metadata(config)
 
         build_deps = config['build-system'].get('requires', [])
 
@@ -39,10 +36,10 @@ class Config(object):
         for glob in source_config.get('exclude', []):
             source.exclude(glob)
 
-        return Config(metadata, env_dir, dev_deps, source)
+        return Config(env_dir, dev_deps, source)
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}(metadata={self.metadata!r}, '
-            f'env_dir={self.env_dir!r}, dev_deps={self.dev_deps!r})'
+            f'{self.__class__.__name__}(env_dir={self.env_dir!r}, '
+            f'dev_deps={self.dev_deps!r}, source={self.source!r})'
         )

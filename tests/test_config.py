@@ -9,7 +9,7 @@ from chakra.config import Config
 class TestConfig(unittest.TestCase):
 
     def test(self):
-        """Test a sample `pyproject.toml` configuration."""
+        """Test with a sample `pyproject.toml` configuration."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
             pyproject_file = Path(temp_dir) / Path('pyproject.toml')
@@ -39,9 +39,6 @@ class TestConfig(unittest.TestCase):
                 ))
 
             config = Config.load(pyproject_file)
-
-        metadata_text = config.metadata.text()
-        assert len(metadata_text.strip().split('\n')) == 3
 
         assert config.env_dir == Path('my-envs')
 
