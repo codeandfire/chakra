@@ -30,6 +30,7 @@ class TestWriteRFC822(unittest.TestCase):
             bar: foo
             bar: baz
             baz: foo
+
             foo bar baz
         """).strip()
 
@@ -41,12 +42,12 @@ class TestMetadata(unittest.TestCase):
 class TestConfig(unittest.TestCase):
 
     def test(self):
-        """Test a sample `pyproject.toml` configuration."""
+        """Test with a sample `pyproject.toml` configuration."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_file = Path(temp_dir) / Path('pyproject.toml')
+            pyproject_file = Path(temp_dir) / Path('pyproject.toml')
 
-            with open(config_file, 'w') as f:
+            with open(pyproject_file, 'w') as f:
                 f.write(textwrap.dedent("""
                     [project]
                     name = "foo"
@@ -70,10 +71,7 @@ class TestConfig(unittest.TestCase):
                     """
                 ))
 
-            config = Config(config_file)
-
-        metadata_text = config.metadata.text()
-        assert len(metadata_text.strip().split('\n')) == 3
+            config = Config.load(pyproject_file)
 
         assert config.env_dir == Path('my-envs')
 
