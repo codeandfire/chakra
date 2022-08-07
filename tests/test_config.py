@@ -3,7 +3,7 @@ from tempfile_patch import tempfile
 import textwrap
 import unittest
 
-from chakra.config import Config, _write_rfc822
+from chakra.config import Config, _write_ini, _write_rfc822
 
 
 class TestWriteRFC822(unittest.TestCase):
@@ -31,6 +31,31 @@ class TestWriteRFC822(unittest.TestCase):
             bar: baz
             baz: foo
             foo bar baz
+        """).strip()
+
+
+class TestWriteINI(unittest.TestCase):
+    """Tests for the helper function `_write_ini()`."""
+
+    def test(self):
+        """Test with some sample data."""
+
+        text = _write_ini({
+            'foo': {'foo1': '1', 'foo2': '2', 'foo3': '3'},
+            'bar': {'1': 'bar1', '2': 'bar2'},
+            'baz': {},
+        })
+        assert text == textwrap.dedent("""
+            [foo]
+            foo1 = 1
+            foo2 = 2
+            foo3 = 3
+
+            [bar]
+            1 = bar1
+            2 = bar2
+
+            [baz]
         """).strip()
 
 
