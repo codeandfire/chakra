@@ -7,7 +7,7 @@ from pathlib import Path
 from .core import Environment, Source
 
 
-def _write_rfc822(headers, body=None):
+def _write_rfc822(headers, body):
     """Write an RFC 822 message with headers and a body."""
 
     text = []
@@ -19,8 +19,10 @@ def _write_rfc822(headers, body=None):
             for line in lines[1:]:
                 text.append(f'        {line}')
 
-    if body is not None:
-        text.append(body)
+    # leave a line.
+    text.append('')
+
+    text.append(body)
 
     return '\n'.join(text)
 
