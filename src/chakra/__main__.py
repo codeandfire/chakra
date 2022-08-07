@@ -26,7 +26,7 @@ def cli():
 
     args = parser.parse_args()
 
-    config = Config()
+    config = Config.load()
 
     env = Environment(config.env_dir / Path(args.command))
 
