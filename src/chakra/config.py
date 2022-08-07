@@ -1,3 +1,5 @@
+from configparser import ConfigParser
+import io
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -23,6 +25,51 @@ def _write_rfc822(headers, body=None):
         text.append(body)
 
     return '\n'.join(text)
+
+
+def _write_ini(data):
+    """Write the given data in INI format."""
+
+    parser = ConfigParser(delimiters=('='))
+    parser.read_dict(data)
+
+    # `ConfigParser` does not provide a method to produce string INI output, i.e. it only
+    # supports writing the INI output to a file.
+    # This code uses a `StringIO` object as a workaround to get string output.
+
+    with io.StringIO() as s:
+        parser.write(s, space_around_delimiters=True)
+        contents = s.getvalue().strip()
+
+    return contents
+
+
+class EntryPoints(object):
+    """Entry points metadata."""
+
+    def __init__(self, scripts={}, gui_scripts={}, **kwargs):
+        self._entry_points = {'console_scripts': scripts, 'gui_scripts': gui_scripts}
+        for key, value in kwargs.items():
+            self._entry_points[key] = value
+
+    @classmethod
+    def load(self, pyproject_file='pyproject.toml'):
+        with open(pyproject_file, 'rb') as f:
+            config = tomllib.load(f)
+
+        config = config.get('project', {})
+
+        scripts = config.get('scripts', {})
+        gui_scripts = config.get('gui-scripts', {})
+        entry_points = config.get('entry-points', {})
+
+        return EntryPoints(scripts, gui_scripts, **entry_points)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self._entry_points!r})'
+
+    def write(self):
+        return _write_ini(self._entry_points)
 
 
 class Metadata(object):
