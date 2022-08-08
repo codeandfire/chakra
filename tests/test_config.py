@@ -1,9 +1,68 @@
 from pathlib import Path
 from tempfile_patch import tempfile
+import textwrap
 import unittest
 
 import tomli_w
-from chakra.config import Config
+from chakra.config import Config, _write_ini, _write_rfc822
+
+
+class TestWriteRFC822(unittest.TestCase):
+    """Tests for the helper function `_write_rfc822()`."""
+
+    def test(self):
+        """Test a sample message."""
+
+        text = _write_rfc822(
+            headers={
+                'foo': ['bar', 'baz', 'foo\nbar'],
+                'bar': ['baz\nfoo\nbar', 'foo', 'baz'],
+                'baz': ['foo'],
+            },
+            body='foo bar baz')
+        assert text == textwrap.dedent("""
+            foo: bar
+            foo: baz
+            foo: foo
+                    bar
+            bar: baz
+                    foo
+                    bar
+            bar: foo
+            bar: baz
+            baz: foo
+
+            foo bar baz
+        """).strip()
+
+
+class TestWriteINI(unittest.TestCase):
+    """Tests for the helper function `_write_ini()`."""
+
+    def test(self):
+        """Test with some sample data."""
+
+        text = _write_ini({
+            'foo': {'foo1': '1', 'foo2': '2', 'foo3': '3'},
+            'bar': {'1': 'bar1', '2': 'bar2'},
+            'baz': {},
+        })
+        assert text == textwrap.dedent("""
+            [foo]
+            foo1 = 1
+            foo2 = 2
+            foo3 = 3
+
+            [bar]
+            1 = bar1
+            2 = bar2
+
+            [baz]
+        """).strip()
+
+
+class TestMetadata(unittest.TestCase):
+    pass
 
 
 class TestConfig(unittest.TestCase):

@@ -26,12 +26,12 @@ def cli():
 
     args = parser.parse_args()
 
-    config = Config()
+    config = Config.load()
 
     env = Environment(config.env_dir / Path(args.command))
 
     if not env.path.exists():
-        env.create_command.run()
+        env.create()
         env.activate()
 
         deps = config.dev_deps[args.command]
