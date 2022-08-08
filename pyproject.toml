@@ -9,7 +9,7 @@ authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
 
 dependencies = ["tomli; python_version<'3.11'", "pyproject-metadata"]
 
-scripts = { chakra = "chakra:__main__.cli" }
+scripts = { chakra = "chakra.__main__:cli" }
 
 [build-system]
 requires = []
