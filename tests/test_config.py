@@ -1,8 +1,8 @@
 from pathlib import Path
 from tempfile_patch import tempfile
-import textwrap
 import unittest
 
+import tomli_w
 from chakra.config import Config
 
 
@@ -11,32 +11,24 @@ class TestConfig(unittest.TestCase):
     def test(self):
         """Test with a sample `pyproject.toml` configuration."""
 
+        data = {
+            'project': {'name': 'foo', 'version': '0.1.0'},
+            'build-system': {'requires': ['bar', 'baz']},
+            'tool': {
+                'setuptools': {'packages': {'find': {'where': ['src']}}},
+                'chakra': {
+                    'env-dir': 'my-envs',
+                    'dev-deps': {'docs': ['sphinx'], 'lint': ['mypy', 'flake8']},
+                    'source': {'packages': ['foo']},
+                },
+            },
+        }
+
         with tempfile.TemporaryDirectory() as temp_dir:
             pyproject_file = Path(temp_dir) / Path('pyproject.toml')
 
-            with open(pyproject_file, 'w') as f:
-                f.write(textwrap.dedent("""
-                    [project]
-                    name = "foo"
-                    version = "0.1.0"
-
-                    [build-system]
-                    requires = ["bar", "baz"]
-
-                    [tool.setuptools.packages.find]
-                    where = ["src"]
-
-                    [tool.chakra]
-                    env-dir = "my-envs"
-
-                    [tool.chakra.dev-deps]
-                    docs = ["sphinx"]
-                    lint = ["mypy", "flake8"]
-
-                    [tool.chakra.source]
-                    packages = ["foo"]
-                    """
-                ))
+            with open(pyproject_file, 'wb') as f:
+                tomli_w.dump(data, f)
 
             config = Config.load(pyproject_file)
 
