@@ -1,10 +1,12 @@
 import argparse
 from pathlib import Path
-from .tempfile_patch import tempfile
 
 from .backend import build_editable
 from .config import Config
 from .core import Command, Environment
+
+# load a patched version of `tempfile`.
+from ._tempfile_patch import tempfile
 
 
 def _requirements_txt(deps):
