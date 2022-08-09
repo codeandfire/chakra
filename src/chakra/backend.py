@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .config import Config
+from chakra.config import Config
 
 def get_requires_for_build_sdist(config_settings=None):
     raise NotImplementedError

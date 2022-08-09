@@ -1,10 +1,11 @@
 import argparse
 from pathlib import Path
-from .tempfile_patch import tempfile
 
-from .backend import build_editable
-from .config import Config
-from .core import Command, Environment
+from chakra._utils import tempfile
+
+from chakra.backend import build_editable
+from chakra.config import Config
+from chakra.core import Command, Environment
 
 
 def _requirements_txt(deps):

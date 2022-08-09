@@ -1,50 +1,13 @@
 from configparser import ConfigParser
 import functools
 import io
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
 from pathlib import Path
 
-from .core import Environment, Source
+from chakra._utils import ini
+from chakra._utils import rfc822
+from chakra._utils import tomllib
 
-
-def _write_rfc822(headers, body):
-    """Write an RFC 822 message with headers and a body."""
-
-    text = []
-
-    for name, entries in headers.items():
-        for entry in entries:
-            lines = entry.strip().split('\n')
-            text.append(f'{name}: {lines[0]}')
-            for line in lines[1:]:
-                text.append(f'        {line}')
-
-    # leave a line.
-    text.append('')
-
-    text.append(body)
-
-    return '\n'.join(text)
-
-
-def _write_ini(data):
-    """Write the given data in INI format."""
-
-    parser = ConfigParser(delimiters=('='))
-    parser.read_dict(data)
-
-    # `ConfigParser` does not provide a method to produce string INI output, i.e. it only
-    # supports writing the INI output to a file.
-    # This code uses a `StringIO` object as a workaround to get string output.
-
-    with io.StringIO() as s:
-        parser.write(s, space_around_delimiters=True)
-        contents = s.getvalue().strip()
-
-    return contents
+from chakra.core import Environment, Source
 
 
 @functools.cache
@@ -83,7 +46,7 @@ class EntryPoints(object):
         return f'{self.__class__.__name__}({self._entry_points!r})'
 
     def write(self):
-        return _write_ini(self._entry_points)
+        return ini.dumps(self._entry_points)
 
 
 class Metadata(object):
@@ -236,7 +199,7 @@ class Metadata(object):
 
             headers[attr.replace('_', '-').title()] = value
 
-        return _write_rfc822(headers, body=self.description)
+        return rfc822.dumps(headers, body=self.description)
 
 
 class Config(object):
