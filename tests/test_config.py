@@ -1,12 +1,10 @@
 from pathlib import Path
+from tempfile_patch import tempfile
 import textwrap
 import unittest
 
 import tomli_w
 from chakra.config import Config, _write_ini, _write_rfc822
-
-# load a patched version of `tempfile`.
-from chakra._tempfile_patch import tempfile
 
 
 class TestWriteRFC822(unittest.TestCase):

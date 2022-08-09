@@ -2,6 +2,7 @@ from io import StringIO
 import os
 from pathlib import Path
 import sys
+from tempfile_patch import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -9,9 +10,6 @@ import virtualenv
 from chakra.__main__ import cli
 
 import simulator
-
-# load a patched version of `tempfile`.
-from chakra._tempfile_patch import tempfile
 
 
 @patch('sys.stdout', new_callable=StringIO)

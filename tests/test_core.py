@@ -1,15 +1,13 @@
 import os
 import subprocess
 import sys
+from tempfile_patch import tempfile
 import unittest
 from pathlib import Path
 
 import virtualenv
 
 from chakra.core import Command, Environment, Hook
-
-# load a patched version of `tempfile`.
-from chakra._tempfile_patch import tempfile
 
 
 def make_directories(structure, at=Path('.')):
