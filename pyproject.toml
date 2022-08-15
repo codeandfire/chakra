@@ -4,22 +4,18 @@ version = "0.1.0"
 description = "Standardized workflow for Python projects."
 readme = "README.md"
 requires-python = ">=3.7"
-license = { text = "MIT License" }
+license = { file = "LICENSE" }
 authors = [ { name = "Saniya Maheshwari", email = "saniya.mah@gmail.com" } ]
 
-dependencies = [
-	"tomli; python_version<'3.11'",
-	"pyproject-metadata",
-	"virtualenv",
-]
+dependencies = ["tomli; python_version<'3.11'", "virtualenv"]
 
-scripts = { chakra = "chakra:__main__.cli" }
+scripts = { chakra = "chakra.__main__:cli" }
 
 [build-system]
 requires = []
 
 [tool.chakra.dev-deps]
-test = ["nose2[coverage_plugin]"]
+test = ["nose2[coverage_plugin]", "tomli-w"]
 fixes = ["flake8", "isort"]
 
 [tool.chakra.source]

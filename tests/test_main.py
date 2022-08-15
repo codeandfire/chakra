@@ -2,12 +2,13 @@ from io import StringIO
 import os
 from pathlib import Path
 import sys
-from tempfile_patch import tempfile
 import unittest
 from unittest.mock import patch
 
 import virtualenv
+
 from chakra.__main__ import cli
+from chakra._utils import tempfile
 
 import simulator
 
