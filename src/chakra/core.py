@@ -121,7 +121,7 @@ class Environment(object):
         assert isinstance(path, Path), 'path must be a pathlib.Path object'
 
         self.path = path
-        self.python = Path(shutil.which(python))
+        self.python = Path(shutil.which(python)).resolve()
         self.is_activated = False
 
     def __repr__(self):
