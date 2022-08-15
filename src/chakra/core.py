@@ -104,7 +104,8 @@ def _virtualenv_cli_run(dest, prompt=None, python=None):
     """Wrapper around the `virtualenv` module's environment creation API."""
 
     tokens = [dest]
-    tokens += ['--quiet', '--download', '--activators', 'python']
+    tokens += ['--quiet', '--download', '--activators', 'python', '--no-setuptools',
+               '--no-wheel']
     if prompt is not None:
         tokens += ['--prompt', prompt]
     if python is not None:
