@@ -19,8 +19,8 @@ def _subprocess_run(args, capture_output=False, env=None, **kwargs):
 
     try:
         return subprocess.run(
-            args, shell=False, check=False, capture_output=capture_output, env=env,
-            **kwargs)
+            args, shell=False, check=False, text=True, capture_output=capture_output,
+            env=env, **kwargs)
 
     except FileNotFoundError as exc:
 
@@ -63,8 +63,7 @@ class Command(object):
         env_vars = self.env_vars.copy()
         env_vars['PATH'] = os.environ['PATH']
 
-        return _subprocess_run(
-            self.tokens, capture_output=capture_output, env=env_vars, text=True)
+        return _subprocess_run(self.tokens, capture_output=capture_output, env=env_vars)
 
 
 class Hook(Command):
