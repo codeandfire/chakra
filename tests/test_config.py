@@ -1,47 +1,41 @@
 from pathlib import Path
-from tempfile_patch import tempfile
 import textwrap
 import unittest
 
 from chakra.config import Config
+from chakra._utils import tempfile
+from chakra._utils import tomllib
+
+
+class TestMetadata(unittest.TestCase):
+    pass
 
 
 class TestConfig(unittest.TestCase):
 
     def test(self):
-        """Test a sample `pyproject.toml` configuration."""
+        """Test with a sample `pyproject.toml` configuration."""
+
+        data = {
+            'project': {'name': 'foo', 'version': '0.1.0'},
+            'build-system': {'requires': ['bar', 'baz']},
+            'tool': {
+                'setuptools': {'packages': {'find': {'where': ['src']}}},
+                'chakra': {
+                    'env-dir': 'my-envs',
+                    'dev-deps': {'docs': ['sphinx'], 'lint': ['mypy', 'flake8']},
+                    'source': {'packages': ['foo']},
+                },
+            },
+        }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_file = Path(temp_dir) / Path('pyproject.toml')
+            pyproject_file = Path(temp_dir) / Path('pyproject.toml')
 
-            with open(config_file, 'w') as f:
-                f.write(textwrap.dedent("""
-                    [project]
-                    name = "foo"
-                    version = "0.1.0"
+            with open(pyproject_file, 'wb') as f:
+                tomllib.dump(data, f)
 
-                    [build-system]
-                    requires = ["bar", "baz"]
-
-                    [tool.setuptools.packages.find]
-                    where = ["src"]
-
-                    [tool.chakra]
-                    env-dir = "my-envs"
-
-                    [tool.chakra.dev-deps]
-                    docs = ["sphinx"]
-                    lint = ["mypy", "flake8"]
-
-                    [tool.chakra.source]
-                    packages = ["foo"]
-                    """
-                ))
-
-            config = Config(config_file)
-
-        metadata_text = config.metadata.text()
-        assert len(metadata_text.strip().split('\n')) == 3
+            config = Config.load(pyproject_file)
 
         assert config.env_dir == Path('my-envs')
 

@@ -1,13 +1,13 @@
 import os
 import subprocess
 import sys
-from tempfile_patch import tempfile
 import unittest
 from pathlib import Path
 
 import virtualenv
 
 from chakra.core import Command, Environment, Hook
+from chakra._utils import tempfile
 
 
 def make_directories(structure, at=Path('.')):
@@ -238,10 +238,7 @@ class TestEnvironment(unittest.TestCase):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
 
-
-class TestCommandUnderEnvironment(unittest.TestCase):
-
-    def test(self):
+    def test_command_under_env(self):
         """Test a command run under an environment."""
 
         command = Command(['pip', 'freeze'])
@@ -250,10 +247,28 @@ class TestCommandUnderEnvironment(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
-            env = Environment(Path(env_path))
-            env.create_command.run(capture_output=True)
+            env = Environment(env_path)
+            env.create()
             env.activate()
 
             new_result = command.run(capture_output=True)
 
         assert result.stdout != new_result.stdout
+
+    def test_pip_latest_version(self):
+        """The environment should come with the latest version of Pip."""
+
+        version_cmd = Command(['pip', '--version'])
+        upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create()
+            env.activate()
+
+            version = version_cmd.run(capture_output=True).stdout
+            upgrade_cmd.run(capture_output=True)
+            new_version = version_cmd.run(capture_output=True).stdout
+
+        assert version == new_version

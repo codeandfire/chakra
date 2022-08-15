@@ -12,6 +12,9 @@ import os
 import tempfile
 
 
+__all__ = ['tempfile']
+
+
 class DirChangeTemporaryDirectory(tempfile.TemporaryDirectory):
     """A `TemporaryDirectory` which is robust against directory changes.
 
