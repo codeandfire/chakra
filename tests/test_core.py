@@ -238,7 +238,7 @@ class TestEnvironment(unittest.TestCase):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
 
-    def test_setuptools_wheel_installed(self):
+    def test_setuptools_wheel_not_installed(self):
         """Test that `setuptools` and `wheel` are not installed in the environment.
 
         The packages `setuptools` and `wheel` are not required by Chakra; if required by
