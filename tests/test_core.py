@@ -4,10 +4,10 @@ import sys
 import unittest
 from pathlib import Path
 
-from chakra.core import Command, Environment, Hook
+import virtualenv
 
-# load a patched version of `tempfile`.
-from tempfile_patch import tempfile
+from chakra.core import Command, Environment, Hook
+from chakra._utils import tempfile
 
 
 def make_directories(structure, at=Path('.')):
@@ -80,22 +80,18 @@ class TestCommand(unittest.TestCase):
         assert result.stderr.strip() == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file://.../foo/bar --progress-bar off --isolated --no-color`."""
+        """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
 
         result = Command(
-            ['pip', 'install', 'foo', 'bar', 'baz',
-             '--find-links', Path('./foo/bar').resolve(strict=False).as_uri(),
-             '--progress-bar', 'off', '--isolated', '--no-color']
+            ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
+             Path('/foo/bar').as_uri()],
         ).run(capture_output=True)
 
         assert result.returncode != 0
-        assert result.stdout.strip().startswith('Looking in links:')
+        assert 'Looking in links:' in result.stdout.strip()
         for line in result.stderr.strip().split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
-    # NOTE: this test is currently failing. Shows how we are not able to support `python
-    # -m` commands yet.
-    @unittest.skip('currently not working')
     def test_python_m(self):
         """Run a `python -m` command."""
 
@@ -195,50 +191,47 @@ class TestHook(unittest.TestCase):
 
 class TestEnvironment(unittest.TestCase):
 
-    def test_create_and_activate(self):
-        """Test if creation and activation of an environment works.
-
-        This test takes a little time because of the time spent in creating the
-        environment.
-        """
+    def test_create(self):
+        """Test creation of an environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
+            env.create()
 
-            env.create_command.run(capture_output=True)
+            assert env_path.exists()
+            assert (env_path / Path('bin')).exists()
+            assert (env_path / Path('lib')).exists()
+            assert (env_path / Path('pyvenv.cfg')).exists()
+
+    def test_activate(self):
+        """Test if activation of an environment works.
+
+        This test works by checking the value of `PATH` before and after activating the
+        environment. After activating the environment, `PATH` should contain some
+        directories that are relative to the directory of the environment.
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # create an environment by directly accessing the `virtualenv` module's API.
+            env_path = Path(temp_dir) / Path('.venv')
+            virtualenv.cli_run([str(env_path)])
+
+            env = Environment(env_path)
+
+            env.create()
             assert not env.is_activated
 
-            # pre-activation, none of the paths in `PYTHONPATH` (i.e. `sys.path`) should
+            # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
             # have anything to do with the created environment.
             assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
             assert env.is_activated
 
-            # post-activation, at least one of the paths in `PYTHONPATH` (i.e. `sys.path`)
+            # post-activation, at least one of the paths in `PATH` (i.e. `sys.path`)
             # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
-
-    def test_create_command(self):
-        """Test the command used to create the environment.
-
-        While the test above just tests if the environment is created (and activated),
-        this test checks the actual command used for creating the environment, i.e. flags
-        and arguments passed to the `virtualenv` command are also checked. Therefore this
-        test is relevant.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-
-            # Why is a temporary directory, and cd'ing into it required here? Because the
-            # presence of a .venv directory within the directory from which these tests
-            # are being run can interfere with this test.
-
-            env = Environment(Path('.venv'))
-            assert env.create_command == Command(
-                ['virtualenv', '.venv', '--activators', 'python', '--download'])
 
     @unittest.expectedFailure
     def test_path_is_a_path(self):
@@ -255,7 +248,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(Path(env_path))
-            env.create_command.run(capture_output=True)
+            env.create()
             env.activate()
 
             new_result = command.run(capture_output=True)
