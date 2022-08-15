@@ -200,9 +200,9 @@ class TestEnvironment(unittest.TestCase):
             env.create()
 
             assert env_path.exists()
-            assert (env_path / Path('bin')).exists()
-            assert (env_path / Path('lib')).exists()
             assert (env_path / Path('pyvenv.cfg')).exists()
+            assert env._activate_script.exists()
+            assert env.python_executable.exists()
 
     def test_activate(self):
         """Test if activation of an environment works.
