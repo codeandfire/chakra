@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import virtualenv
-from pyproject_metadata import StandardMetadata
 
 
 def _subprocess_run(args, capture_output=False, env=None, **kwargs):
@@ -20,8 +19,8 @@ def _subprocess_run(args, capture_output=False, env=None, **kwargs):
 
     try:
         return subprocess.run(
-            args, shell=False, check=False, capture_output=capture_output, env=env,
-            **kwargs)
+            args, shell=False, check=False, text=True, capture_output=capture_output,
+            env=env, **kwargs)
 
     except FileNotFoundError as exc:
 
@@ -64,8 +63,7 @@ class Command(object):
         env_vars = self.env_vars.copy()
         env_vars['PATH'] = os.environ['PATH']
 
-        return _subprocess_run(
-            self.tokens, capture_output=capture_output, env=env_vars, text=True)
+        return _subprocess_run(self.tokens, capture_output=capture_output, env=env_vars)
 
 
 class Hook(Command):
@@ -118,9 +116,7 @@ class Environment(object):
     """A virtual environment."""
 
     def __init__(self, path):
-        assert isinstance(path, Path), 'path must be a pathlib.Path object'
-
-        self.path = path
+        self.path = Path(path)
         self.is_activated = False
 
     def __repr__(self):
@@ -150,26 +146,6 @@ class Environment(object):
 
     def remove(self):
         shutil.rmtree(self.path)
-
-
-class Metadata(object):
-    """Project metadata from `pyproject.toml`.
-
-    This is a very thin wrapper around `pyproject_metadata.StandardMetadata`.
-    """
-
-    def __init__(self, pyproject_config):
-        self._metadata = StandardMetadata.from_pyproject(pyproject_config)
-
-    def __repr__(self):
-        return self._metadata.__repr__().replace(
-            self._metadata.__class__.__name__, self.__class__.__name__)
-
-    def __getattr__(self, attr):
-        return getattr(self._metadata, attr)
-
-    def text(self):
-        return str(self._metadata.as_rfc822())
 
 
 class Source(object):
