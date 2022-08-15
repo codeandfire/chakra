@@ -144,6 +144,10 @@ class Environment(object):
         else:
             return self.path / Path('Scripts') / self.python.name
 
+    @property
+    def site_packages(self):
+        return self.path / Path('lib') / Path(self.python.name) / Path('site-packages')
+
     def create(self):
         _virtualenv_cli_run(
             dest=str(self.path), prompt=self.path.name, python=str(self.python))
