@@ -245,10 +245,7 @@ class TestEnvironment(unittest.TestCase):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
 
-
-class TestCommandUnderEnvironment(unittest.TestCase):
-
-    def test(self):
+    def test_command_under_env(self):
         """Test a command run under an environment."""
 
         command = Command(['pip', 'freeze'])
