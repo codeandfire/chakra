@@ -251,7 +251,7 @@ class TestCommandUnderEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(Path(env_path))
-            env.create_command.run(capture_output=True)
+            env.create()
             env.activate()
 
             new_result = command.run(capture_output=True)
