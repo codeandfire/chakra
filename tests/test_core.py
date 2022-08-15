@@ -247,10 +247,28 @@ class TestEnvironment(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
-            env = Environment(Path(env_path))
+            env = Environment(env_path)
             env.create()
             env.activate()
 
             new_result = command.run(capture_output=True)
 
         assert result.stdout != new_result.stdout
+
+    def test_pip_latest_version(self):
+        """The environment should come with the latest version of Pip."""
+
+        version_cmd = Command(['pip', '--version'])
+        upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create()
+            env.activate()
+
+            version = version_cmd.run(capture_output=True).stdout
+            upgrade_cmd.run(capture_output=True)
+            new_version = version_cmd.run(capture_output=True).stdout
+
+        assert version == new_version
