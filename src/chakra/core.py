@@ -156,6 +156,25 @@ class Environment(object):
         self.is_activated = True
         exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
 
+    def has_installed(self, package, package_ver=None):
+
+        if ((self.site_packages / Path(package)).exists() or
+                (self.site_packages / Path(f'{package}.py')).exists()):
+
+            if package_ver is None:
+                dist_info = self.site_packages.glob(f'{package}-*.dist-info')
+                dist_info = list(dist_info)
+
+                if len(dist_info) == 1:
+                    return True
+
+            else:
+                dist_info = self.site_packages / Path(f'{package}-{package_ver}.dist-info')
+                if dist_info.exists():
+                    return True
+
+        return False
+
     def remove(self):
         shutil.rmtree(self.path)
 

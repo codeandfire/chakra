@@ -238,6 +238,32 @@ class TestEnvironment(unittest.TestCase):
         """The `path` parameter passed must be a `pathlib.Path` instance."""
         _ = Environment('.venv')
 
+    def test_setuptools_wheel_installed(self):
+        """Test that `setuptools` and `wheel` are not installed in the environment.
+
+        The packages `setuptools` and `wheel` are not required by Chakra; if required by
+        other packages as build-time dependencies, they can be installed at that time. Not
+        including these two packages may save some time while creating the environment.
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create()
+
+            assert not env.has_installed('setuptools')
+            assert not env.has_installed('wheel')
+
+    def test_pip_installed(self):
+        """Test that `pip` is installed in the environment."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create()
+
+            assert env.has_installed('pip')
+
 
 class TestCommandUnderEnvironment(unittest.TestCase):
 
