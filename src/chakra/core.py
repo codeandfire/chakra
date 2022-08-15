@@ -117,15 +117,18 @@ def _virtualenv_cli_run(dest, prompt=None, python=None):
 class Environment(object):
     """A virtual environment."""
 
-    def __init__(self, path):
+    def __init__(self, path, python='python'):
         assert isinstance(path, Path), 'path must be a pathlib.Path object'
 
         self.path = path
+        self.python = Path(shutil.which(python))
         self.is_activated = False
 
     def __repr__(self):
-        return \
-            f'{self.__class__.__name__}({self.path!r}, is_activated={self.is_activated})'
+        return (
+            f'{self.__class__.__name__}({self.path!r}, python={self.python!r}, '
+            f'is_activated={self.is_activated})'
+        )
 
     @property
     def _activate_script(self):
@@ -137,12 +140,13 @@ class Environment(object):
     @property
     def python_executable(self):
         if os.name == 'posix':
-            return self.path / Path('bin') / Path('python')
+            return self.path / Path('bin') / self.python.name
         else:
-            return self.path / Path('Scripts') / Path('python')
+            return self.path / Path('Scripts') / self.python.name
 
     def create(self):
-        _virtualenv_cli_run(dest=str(self.path), prompt=self.path.name)
+        _virtualenv_cli_run(
+            dest=str(self.path), prompt=self.path.name, python=str(self.python))
 
     def activate(self):
         self.is_activated = True
