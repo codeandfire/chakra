@@ -49,8 +49,7 @@ class Environment:
     """A virtual environment."""
 
     def __init__(self, path):
-        assert isinstance(path, Path), 'path must be a pathlib.Path object'
-        self.path = path
+        self.path = Path(path)
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.path})'

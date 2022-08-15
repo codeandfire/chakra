@@ -102,11 +102,6 @@ class TestEnvironment(unittest.TestCase):
             assert env.create_command == \
                 Command('virtualenv .venv --download --activators python')
 
-    @unittest.expectedFailure
-    def test_path_is_a_path(self):
-        """The `path` parameter passed must be a `pathlib.Path` instance."""
-        _ = Environment('.venv')
-
     def test_create_on_path_exists(self):
         """Trying to create an environment at an existing path."""
 
