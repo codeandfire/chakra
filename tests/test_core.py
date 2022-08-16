@@ -293,3 +293,35 @@ class TestEnvironment(unittest.TestCase):
 
             assert env.has_installed('tabulate', '0.8.4')
             assert env.has_installed('build', '0.4.0')
+
+    def test_package_imports(self):
+        """Test that packages can be imported within the environment."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create(capture_output=True)
+            env.activate()
+
+            Command(['pip', 'install', 'tabulate']).run(capture_output=True)
+
+            result = Command(['python', '-c', '"import tabulate"']).run(capture_output=True)
+
+        assert result.stdout == ''
+        assert result.stderr == ''
+
+    def test_console_scripts(self):
+        """Test that console scripts work in the environment."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create(capture_output=True)
+            env.activate()
+
+            Command(['pip', 'install', 'build']).run(capture_output=True)
+
+            result = Command(['pyproject-build', '-h']).run(capture_output=True)
+
+        assert result.stdout != ''
+        assert result.stderr == ''
