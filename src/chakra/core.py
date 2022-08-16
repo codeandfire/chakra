@@ -6,8 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import virtualenv
-
 
 def _subprocess_run(args, capture_output=False, env=None, **kwargs):
     """A simple wrapper around `subprocess.run()` with `shell=False` and `check=False`.
@@ -98,20 +96,6 @@ class Hook(Command):
         )
 
 
-def _virtualenv_cli_run(dest, prompt=None, python=None):
-    """Wrapper around the `virtualenv` module's environment creation API."""
-
-    tokens = [dest]
-    tokens += ['--quiet', '--download', '--activators', 'python', '--no-setuptools',
-               '--no-wheel']
-    if prompt is not None:
-        tokens += ['--prompt', prompt]
-    if python is not None:
-        tokens += ['--python', python]
-
-    virtualenv.cli_run(tokens)
-
-
 class Environment(object):
     """A virtual environment."""
 
@@ -144,9 +128,16 @@ class Environment(object):
     def site_packages(self):
         return self.path / Path('lib') / Path(self.python.name) / Path('site-packages')
 
-    def create(self):
-        _virtualenv_cli_run(
-            dest=str(self.path), prompt=self.path.name, python=str(self.python))
+    def create(self, **kwargs):
+        Command([
+            'virtualenv', str(self.path),
+            '--download',
+            '--activators', 'python',
+            '--no-setuptools',
+            '--no-wheel',
+            '--prompt', self.path.name,
+            '--python', str(self.python),
+        ]).run(**kwargs)
 
     def activate(self):
         self.is_activated = True

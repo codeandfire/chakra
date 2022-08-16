@@ -197,7 +197,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create()
+            env.create(capture_output=True)
 
             assert env_path.exists()
             assert (env_path / Path('pyvenv.cfg')).exists()
@@ -219,7 +219,7 @@ class TestEnvironment(unittest.TestCase):
 
             env = Environment(env_path)
 
-            env.create()
+            env.create(capture_output=True)
             assert not env.is_activated
 
             # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
@@ -244,7 +244,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create()
+            env.create(capture_output=True)
 
             assert not env.has_installed('setuptools')
             assert not env.has_installed('wheel')
@@ -255,7 +255,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create()
+            env.create(capture_output=True)
 
             assert env.has_installed('pip')
 
@@ -269,7 +269,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create()
+            env.create(capture_output=True)
             env.activate()
 
             new_result = command.run(capture_output=True)
@@ -285,7 +285,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create()
+            env.create(capture_output=True)
             env.activate()
 
             version = version_cmd.run(capture_output=True).stdout
