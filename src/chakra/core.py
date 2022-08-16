@@ -127,7 +127,7 @@ class Environment(object):
         )
 
     @property
-    def _activate_script(self):
+    def activate_script(self):
         if os.name == 'posix':
             return self.path / Path('bin') / Path('activate_this.py')
         else:
@@ -144,13 +144,17 @@ class Environment(object):
     def site_packages(self):
         return self.path / Path('lib') / Path(self.python.name) / Path('site-packages')
 
+    @property
+    def pyvenv_cfg(self):
+        return self.path / Path('pyvenv.cfg')
+
     def create(self):
         _virtualenv_cli_run(
             dest=str(self.path), prompt=self.path.name, python=str(self.python))
 
     def activate(self):
         self.is_activated = True
-        exec(open(self._activate_script).read(), {'__file__': str(self._activate_script)})
+        exec(open(self.activate_script).read(), {'__file__': str(self.activate_script)})
 
     def has_installed(self, package, package_ver=None):
 
