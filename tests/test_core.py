@@ -260,23 +260,6 @@ class TestEnvironment(unittest.TestCase):
 
             assert env.has_installed('pip')
 
-    def test_command_under_env(self):
-        """Test a command run under an environment."""
-
-        command = Command(['pip', 'freeze'])
-
-        result = command.run(capture_output=True)
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
-            env = Environment(env_path)
-            env.create(capture_output=True)
-            env.activate()
-
-            new_result = command.run(capture_output=True)
-
-        assert result.stdout != new_result.stdout
-
     def test_pip_latest_version(self):
         """The environment should come with the latest version of Pip."""
 
@@ -294,3 +277,19 @@ class TestEnvironment(unittest.TestCase):
             new_version = version_cmd.run(capture_output=True).stdout
 
         assert version == new_version
+
+    def test_package_installs(self):
+        """Test that package installs work in the environment."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_path = Path(temp_dir) / Path('.venv')
+            env = Environment(env_path)
+            env.create(capture_output=True)
+            env.activate()
+
+            Command(
+                ['pip', 'install', 'tabulate==0.8.4', 'build==0.4.0']
+            ).run(capture_output=True)
+
+            assert env.has_installed('tabulate', '0.8.4')
+            assert env.has_installed('build', '0.4.0')
