@@ -200,9 +200,10 @@ class TestEnvironment(unittest.TestCase):
             env.create(capture_output=True)
 
             assert env_path.exists()
-            assert (env_path / Path('pyvenv.cfg')).exists()
-            assert env._activate_script.exists()
+            assert env.activate_script.exists()
             assert env.python_executable.exists()
+            assert env.site_packages.exists()
+            assert env.pyvenv_cfg.exists()
 
     def test_activate(self):
         """Test if activation of an environment works.
@@ -233,7 +234,7 @@ class TestEnvironment(unittest.TestCase):
             # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
 
-    def test_setuptools_wheel_installed(self):
+    def test_setuptools_wheel_not_installed(self):
         """Test that `setuptools` and `wheel` are not installed in the environment.
 
         The packages `setuptools` and `wheel` are not required by Chakra; if required by
