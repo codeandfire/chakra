@@ -33,7 +33,7 @@ def make_directories(structure, at=Path('.')):
 
 class TestCommand(unittest.TestCase):
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_echo(self):
         """Run an `echo` command."""
 
@@ -42,7 +42,7 @@ class TestCommand(unittest.TestCase):
         assert result.stdout == 'foo'
         assert result.stderr == ''
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_ls(self):
         """Run an `ls -lh` command."""
 
@@ -52,7 +52,7 @@ class TestCommand(unittest.TestCase):
         assert len(result.stdout.split(os.linesep)) > 1
         assert result.stderr == ''
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_mkdir(self):
         """Run a `mkdir` command against an existing directory."""
 
@@ -105,7 +105,7 @@ class TestCommand(unittest.TestCase):
         assert result.stdout == ''
         assert result.stderr == 'command not found: foo'
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_env_vars_sh(self):
         """Verify that environment variables are accessible to the command."""
 
@@ -114,7 +114,7 @@ class TestCommand(unittest.TestCase):
         result = command.run()
         assert result.stdout == 'bar foo'
 
-    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_env_vars_powershell(self):
         """Verify that environment variables are accessible to the command."""
 
@@ -136,7 +136,7 @@ class TestHook(unittest.TestCase):
             result = Hook(Path('foo.py')).run()
         assert result.stdout == 'foo'
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash(self):
         """Test a Bash hook."""
 
@@ -148,7 +148,7 @@ class TestHook(unittest.TestCase):
 
         assert result.stdout == 'foo'
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash_sh_extension(self):
         """Test a Bash hook with an `.sh` extension."""
 
@@ -159,7 +159,7 @@ class TestHook(unittest.TestCase):
             result = Hook(Path('foo.sh')).run()
         assert result.stdout == 'foo'
 
-    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_powershell(self):
         """Test a Powershell hook."""
 
