@@ -10,27 +10,6 @@ from chakra.core import Command, Environment, Hook
 from chakra._utils import NotSupportedError, tempfile
 
 
-def make_directories(structure, at=Path('.')):
-    """Create a directory structure.
-
-    For documentation on how this works, please refer: tests/make_directories.md
-    """
-
-    if isinstance(structure, tuple):
-        dir_name = structure[0]
-        dir_path = at / Path(dir_name)
-        dir_path.mkdir()
-        make_directories(structure[1], at=dir_path)
-
-    elif isinstance(structure, list):
-        for s in structure:
-            make_directories(s, at=at)
-
-    # it must be a string, i.e. a file name.
-    else:
-        (at / Path(structure)).touch()
-
-
 class TestCommand(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
