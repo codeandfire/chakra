@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 import functools
 import io
-from pathlib import Path
+import pathlib
 
 from chakra._utils import ini
 from chakra._utils import rfc822
@@ -90,11 +90,11 @@ class Metadata(object):
 
         description = config.get('readme', {})
         try:
-            description = Path(description)
+            description = pathlib.Path(description)
 
         except TypeError:
             try:
-                description = Path(description['file']).read_text()
+                description = pathlib.Path(description['file']).read_text()
             except KeyError:
                 try:
                     description = description['text']
@@ -117,7 +117,7 @@ class Metadata(object):
 
         license_ = config.get('license', {})
         try:
-            license_ = Path(license_['file']).read_text()
+            license_ = pathlib.Path(license_['file']).read_text()
         except KeyError:
             try:
                 license_ = license_['text']
@@ -217,7 +217,7 @@ class Config(object):
 
         config = config.get('tool', {}).get('chakra', {})
 
-        env_dir = Path(config.get('env-dir', '.envs'))
+        env_dir = pathlib.Path(config.get('env-dir', '.envs'))
         dev_deps = config.get('dev-deps', {})
         dev_deps['build'] = build_deps
 

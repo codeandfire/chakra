@@ -1,9 +1,11 @@
+import enum
+import functools
 import os
+import pathlib
 import shlex
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 from ._utils import NotSupportedError
 
@@ -59,6 +61,44 @@ class Command(object):
         return _subprocess_run(self.tokens, capture_output=capture_output, env=env_vars)
 
 
+class OpSystem(enum.Enum):
+    WINDOWS = 'nt'
+    LINUX = 'linux'
+    MACOS = 'darwin'
+
+    @classmethod
+    @functools.cache
+    def find(cls):
+        # plat_os = platform OS, cand_os = candidate OS
+        if os.name == 'posix':
+            plat_os = Command(['uname', '-s']).run().stdout.lower()
+        else:
+            plat_os = os.name
+        for cand_os in cls:
+            if plat_os == cand_os.value:
+                return cand_os
+        raise NotSupportedError(f'unsupported operating system (or kernel) {plat_os!r}')
+
+
+class Arch(enum.Enum):
+    INTEL_AMD_32_BIT = ('x86', 'i386', 'i586', 'i686')
+    INTEL_AMD_64_BIT = ('x86_64', 'amd64')
+    ARM_64_BIT = ('arm64', 'aarch64')
+
+    @classmethod
+    @functools.cache
+    def find(cls, opsys):
+        # plat_ar = platform arch., cand_ar = candidate arch.
+        if opsys == OpSystem.WINDOWS:
+            plat_ar = os.environ['PROCESSOR_ARCHITECTURE'].lower()
+        else:
+            plat_ar = Command(['uname', '-m']).run().stdout
+        for cand_ar in cls:
+            if plat_ar in cand_ar.value:
+                return cand_ar
+        raise NotSupportedError(f'unsupported architecture {plat_ar!r}')
+
+
 class Hook(Command):
     """An executable script."""
 
@@ -84,8 +124,8 @@ class Environment(object):
     """A virtual environment."""
 
     def __init__(self, path, python='python'):
-        self.path = Path(path)
-        self.python = Path(shutil.which(python)).resolve()
+        self.path = pathlib.Path(path)
+        self.python = pathlib.Path(shutil.which(python)).resolve()
         self.is_activated = False
 
     def __repr__(self):
@@ -96,17 +136,17 @@ class Environment(object):
 
     @property
     def activate_script(self):
-        if os.name == 'posix':
-            return self.path / 'bin' / 'activate_this.py'
-        else:
+        if OpSystem.find() == OpSystem.WINDOWS:
             return self.path / 'Scripts' / 'activate_this.py'
+        else:
+            return self.path / 'bin' / 'activate_this.py'
 
     @property
     def python_executable(self):
-        if os.name == 'posix':
-            return self.path / 'bin' / self.python.name
-        else:
+        if OpSystem.find() == OpSystem.WINDOWS:
             return self.path / 'Scripts' / self.python.name
+        else:
+            return self.path / 'bin' / self.python.name
 
     @property
     def site_packages(self):
