@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-def _subprocess_run(args, capture_output=True, env=None, **kwargs):
+def _subprocess_run(args, capture_output=True, env=None):
     """A simple wrapper around `subprocess.run()`.
 
     * This sets `shell=False` and `check=False` by default.
@@ -20,23 +20,14 @@ def _subprocess_run(args, capture_output=True, env=None, **kwargs):
     try:
         result = subprocess.run(
             args, shell=False, check=False, text=True, capture_output=capture_output,
-            env=env, **kwargs)
-
+            env=env)
     except FileNotFoundError as exc:
-
-        # come up with an error message.
-        # `exc.filename` contains the name of the command that was not found.
         err = f'command not found: {exc.filename}'
-
         if not capture_output:
             print(err, file=sys.stderr)
             stdout, stderr = None, None
         else:
             stdout, stderr = '', err
-
-        # 127 is the exit code returned by the shell in the case of a command not found
-        # error, on all platforms (Linux / Windows / MacOS).
-        # hence the choice of this exit code.
         result = subprocess.CompletedProcess(
             args=args, returncode=127, stdout=stdout, stderr=stderr)
     else:
@@ -54,8 +45,7 @@ class Command(object):
         self.env_vars = env_vars
 
     def __repr__(self):
-        return \
-            f'{self.__class__.__name__}(tokens={self.tokens!r}, env_vars={self.env_vars!r})'
+        return f'{self.__class__.__name__}(tokens={self.tokens!r}, env_vars={self.env_vars!r})'
 
     def __str__(self):
         return shlex.join(self.tokens)
@@ -64,43 +54,36 @@ class Command(object):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
     def run(self, capture_output=True):
-        # pass the current PATH.
         env_vars = self.env_vars.copy()
-        env_vars['PATH'] = os.environ['PATH']
-
+        env_vars['PATH'] = os.environ['PATH']    # pass the current PATH
         return _subprocess_run(self.tokens, capture_output=capture_output, env=env_vars)
 
 
 class Hook(Command):
     """An executable script."""
 
-    def __init__(self, script_path):
-        self.script_path = script_path
-
-        if self.script_path.suffix == '.ps1':
+    def __init__(self, script):
+        self.script = script
+        if self.script.suffix == '.ps1':
             self.interpreter = 'powershell'
-
-            super().__init__([self.interpreter, '-File', str(self.script_path)])
-
+            super().__init__([self.interpreter, '-File', str(self.script)])
         else:
-            if self.script_path.suffix == '.py':
+            if self.script.suffix == '.py':
                 self.interpreter = 'python'
-            elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
+            elif self.script.suffix == '' or self.script.suffix == '.sh':
                 self.interpreter = 'bash'
             else:
-                raise RuntimeError(
-                    f"unsupported extension '{self.script_path.suffix}': "
-                    "only Python ('.py' extension), Bash (no extension or '.sh' "
-                    "extension) and Powershell ('.ps1' extension) scripts are supported."
-                )
+                self._unsupported_ext(self.script.suffix)
+            super().__init__([self.interpreter, str(self.script)])
 
-            super().__init__([self.interpreter, str(self.script_path)])
+    @staticmethod
+    def _unsupported_ext(ext):
+        raise RuntimeError(
+            f"unsupported extension {ext}: only Python (.py), Bash (no extension or .sh),"
+            " and Powershell (.ps1) scripts are supported")
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}(interpreter={self.interpreter!r}, '
-            f'script_path={self.script_path!r})'
-        )
+        return f'{self.__class__.__name__}(interpreter={self.interpreter!r}, script={self.script!r})'
 
 
 class Environment(object):
@@ -120,26 +103,28 @@ class Environment(object):
     @property
     def activate_script(self):
         if os.name == 'posix':
-            return self.path / Path('bin') / Path('activate_this.py')
+            return self.path / 'bin' / 'activate_this.py'
         else:
-            return self.path / Path('Scripts') / Path('activate_this.py')
+            return self.path / 'Scripts' / 'activate_this.py'
 
     @property
     def python_executable(self):
         if os.name == 'posix':
-            return self.path / Path('bin') / self.python.name
+            return self.path / 'bin' / self.python.name
         else:
-            return self.path / Path('Scripts') / self.python.name
+            return self.path / 'Scripts' / self.python.name
 
     @property
     def site_packages(self):
-        return self.path / Path('lib') / Path(self.python.name) / Path('site-packages')
+        return self.path / 'lib' / self.python.name / 'site-packages'
 
     @property
     def pyvenv_cfg(self):
-        return self.path / Path('pyvenv.cfg')
+        return self.path / 'pyvenv.cfg'
 
     def create(self, **kwargs):
+        # not using `virtualenv.cli_run([...])` here, since `virtualenv` turns out to be a
+        # time-consuming import and impacts chakra's startup time.
         Command([
             'virtualenv', str(self.path),
             '--download',
@@ -154,23 +139,17 @@ class Environment(object):
         self.is_activated = True
         exec(open(self.activate_script).read(), {'__file__': str(self.activate_script)})
 
-    def has_installed(self, package, package_ver=None):
-
-        if ((self.site_packages / Path(package)).exists() or
-                (self.site_packages / Path(f'{package}.py')).exists()):
-
-            if package_ver is None:
+    def has_installed(self, package, ver=None):
+        if (self.site_packages / package).exists() or (self.site_packages / f'{package}.py').exists():
+            if ver is None:
                 dist_info = self.site_packages.glob(f'{package}-*.dist-info')
                 dist_info = list(dist_info)
-
                 if len(dist_info) == 1:
                     return True
-
             else:
-                dist_info = self.site_packages / Path(f'{package}-{package_ver}.dist-info')
+                dist_info = self.site_packages / f'{package}-{ver}.dist-info'
                 if dist_info.exists():
                     return True
-
         return False
 
     def remove(self):

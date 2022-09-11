@@ -47,12 +47,9 @@ class TestCommand(unittest.TestCase):
         """Run an `ls -lh` command."""
 
         result = Command(['ls', '-l', '-h']).run()
-
         assert result.returncode == 0
-
         # output of `ls -lh` will always have multiple lines.
         assert len(result.stdout.split(os.linesep)) > 1
-
         assert result.stderr == ''
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
@@ -86,7 +83,6 @@ class TestCommand(unittest.TestCase):
             ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
              Path('/foo/bar').as_uri()],
         ).run()
-
         assert result.returncode != 0
         assert 'Looking in links:' in result.stdout
         for line in result.stderr.split(os.linesep):
@@ -138,7 +134,6 @@ class TestHook(unittest.TestCase):
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
             result = Hook(Path('foo.py')).run()
-
         assert result.stdout == 'foo'
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
@@ -162,7 +157,6 @@ class TestHook(unittest.TestCase):
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(Path('foo.sh')).run()
-
         assert result.stdout == 'foo'
 
     @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
@@ -174,7 +168,6 @@ class TestHook(unittest.TestCase):
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
             result = Hook(Path('foo.ps1')).run()
-
         assert result.stdout == 'foo'
 
     def test_unsupported(self):
@@ -184,7 +177,6 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.bat', 'w') as f:
                 f.write('dir')
-
             with self.assertRaises(RuntimeError):
                 Hook(Path('foo.bat')).run()
 
@@ -198,7 +190,6 @@ class TestEnvironment(unittest.TestCase):
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
             env.create()
-
             assert env_path.exists()
             assert env.activate_script.exists()
             assert env.python_executable.exists()
@@ -214,24 +205,15 @@ class TestEnvironment(unittest.TestCase):
         """
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            # create an environment by directly accessing the `virtualenv` module's API.
             env_path = Path(temp_dir) / Path('.venv')
             virtualenv.cli_run([str(env_path)])
-
             env = Environment(env_path)
-
             env.create()
             assert not env.is_activated
-
-            # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
-            # have anything to do with the created environment.
             assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
             assert env.is_activated
-
-            # post-activation, at least one of the paths in `PATH` (i.e. `sys.path`)
-            # should refer to the created environment.
             assert any([Path(path).is_relative_to(env_path) for path in sys.path])
 
     def test_setuptools_wheel_not_installed(self):
@@ -246,7 +228,6 @@ class TestEnvironment(unittest.TestCase):
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
             env.create()
-
             assert not env.has_installed('setuptools')
             assert not env.has_installed('wheel')
 
@@ -257,7 +238,6 @@ class TestEnvironment(unittest.TestCase):
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
             env.create()
-
             assert env.has_installed('pip')
 
     def test_pip_latest_version(self):
@@ -271,7 +251,6 @@ class TestEnvironment(unittest.TestCase):
             env = Environment(env_path)
             env.create()
             env.activate()
-
             version = version_cmd.run().stdout
             upgrade_cmd.run()
             new_version = version_cmd.run().stdout
@@ -286,7 +265,6 @@ class TestEnvironment(unittest.TestCase):
             env = Environment(env_path)
             env.create()
             env.activate()
-
             Command(
                 ['pip', 'install', 'tabulate==0.8.4', 'build==0.4.0']
             ).run()
@@ -302,11 +280,10 @@ class TestEnvironment(unittest.TestCase):
             env = Environment(env_path)
             env.create()
             env.activate()
-
             Command(['pip', 'install', 'tabulate']).run()
-
             result = Command(['python', '-c', '"import tabulate"']).run()
 
+        assert result.returncode == 0
         assert result.stdout == ''
         assert result.stderr == ''
 
@@ -318,10 +295,9 @@ class TestEnvironment(unittest.TestCase):
             env = Environment(env_path)
             env.create()
             env.activate()
-
             Command(['pip', 'install', 'build']).run()
-
             result = Command(['pyproject-build', '-h']).run()
 
+        assert result.returncode == 0
         assert result.stdout != ''
         assert result.stderr == ''
