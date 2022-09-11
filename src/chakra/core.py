@@ -73,14 +73,8 @@ class Hook(Command):
             elif self.script.suffix == '' or self.script.suffix == '.sh':
                 self.interpreter = 'bash'
             else:
-                self._unsupported_ext(self.script.suffix)
+                raise NotSupportedError(f'unsupported hook extension {self.script.suffix}')
             super().__init__([self.interpreter, str(self.script)])
-
-    @staticmethod
-    def _unsupported_ext(ext):
-        raise NotSupportedError(
-            f"unsupported hook extension {ext}: only Python (.py), Bash (no extension or "
-            ".sh), and Powershell (.ps1) scripts are supported")
 
     def __repr__(self):
         return f'{self.__class__.__name__}(interpreter={self.interpreter!r}, script={self.script!r})'
