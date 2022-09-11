@@ -1,34 +1,13 @@
 import os
+import pathlib
 import subprocess
 import sys
 import unittest
-from pathlib import Path
 
 import virtualenv
 
 from chakra.core import Command, Environment, Hook
 from chakra._utils import NotSupportedError, tempfile
-
-
-def make_directories(structure, at=Path('.')):
-    """Create a directory structure.
-
-    For documentation on how this works, please refer: tests/make_directories.md
-    """
-
-    if isinstance(structure, tuple):
-        dir_name = structure[0]
-        dir_path = at / Path(dir_name)
-        dir_path.mkdir()
-        make_directories(structure[1], at=dir_path)
-
-    elif isinstance(structure, list):
-        for s in structure:
-            make_directories(s, at=at)
-
-    # it must be a string, i.e. a file name.
-    else:
-        (at / Path(structure)).touch()
 
 
 class TestCommand(unittest.TestCase):
@@ -58,7 +37,7 @@ class TestCommand(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
-            Path('foo').mkdir()
+            pathlib.Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
             result = Command(['mkdir', 'foo']).run()
@@ -81,7 +60,7 @@ class TestCommand(unittest.TestCase):
 
         result = Command(
             ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
-             Path('/foo/bar').as_uri()],
+             pathlib.Path('/foo/bar').as_uri()],
         ).run()
         assert result.returncode != 0
         assert 'Looking in links:' in result.stdout
@@ -133,7 +112,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
-            result = Hook(Path('foo.py')).run()
+            result = Hook(pathlib.Path('foo.py')).run()
         assert result.stdout == 'foo'
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
@@ -144,7 +123,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo')).run()
+            result = Hook(pathlib.Path('foo')).run()
 
         assert result.stdout == 'foo'
 
@@ -156,7 +135,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo.sh')).run()
+            result = Hook(pathlib.Path('foo.sh')).run()
         assert result.stdout == 'foo'
 
     @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
@@ -167,7 +146,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
-            result = Hook(Path('foo.ps1')).run()
+            result = Hook(pathlib.Path('foo.ps1')).run()
         assert result.stdout == 'foo'
 
     def test_unsupported(self):
@@ -178,7 +157,7 @@ class TestHook(unittest.TestCase):
             with open('foo.bat', 'w') as f:
                 f.write('dir')
             with self.assertRaises(NotSupportedError):
-                Hook(Path('foo.bat')).run()
+                Hook(pathlib.Path('foo.bat')).run()
 
 
 class TestEnvironment(unittest.TestCase):
@@ -187,7 +166,7 @@ class TestEnvironment(unittest.TestCase):
         """Test creation of an environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env_path.exists()
@@ -205,16 +184,16 @@ class TestEnvironment(unittest.TestCase):
         """
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             virtualenv.cli_run([str(env_path)])
             env = Environment(env_path)
             env.create()
             assert not env.is_activated
-            assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
+            assert all([not pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
             assert env.is_activated
-            assert any([Path(path).is_relative_to(env_path) for path in sys.path])
+            assert any([pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
     def test_setuptools_wheel_not_installed(self):
         """Test that `setuptools` and `wheel` are not installed in the environment.
@@ -225,7 +204,7 @@ class TestEnvironment(unittest.TestCase):
         """
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             assert not env.has_installed('setuptools')
@@ -235,7 +214,7 @@ class TestEnvironment(unittest.TestCase):
         """Test that `pip` is installed in the environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env.has_installed('pip')
@@ -247,7 +226,7 @@ class TestEnvironment(unittest.TestCase):
         upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -261,7 +240,7 @@ class TestEnvironment(unittest.TestCase):
         """Test that package installs work in the environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -276,7 +255,7 @@ class TestEnvironment(unittest.TestCase):
         """Test that packages can be imported within the environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -291,7 +270,7 @@ class TestEnvironment(unittest.TestCase):
         """Test that console scripts work in the environment."""
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+            env_path = pathlib.Path(temp_dir) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
