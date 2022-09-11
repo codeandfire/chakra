@@ -24,7 +24,6 @@ class TestConfig(unittest.TestCase):
                 'chakra': {
                     'env-dir': 'my-envs',
                     'dev-deps': {'docs': ['sphinx'], 'lint': ['mypy', 'flake8']},
-                    'source': {'packages': ['foo']},
                 },
             },
         }

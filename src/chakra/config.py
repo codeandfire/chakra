@@ -7,7 +7,7 @@ from chakra._utils import ini
 from chakra._utils import rfc822
 from chakra._utils import tomllib
 
-from chakra.core import Environment, Source
+from chakra.core import Environment
 
 
 @functools.cache
@@ -205,10 +205,9 @@ class Metadata(object):
 class Config(object):
     """Chakra-specific configuration from `pyproject.toml`."""
 
-    def __init__(self, env_dir, dev_deps, source):
+    def __init__(self, env_dir, dev_deps):
         self.env_dir = env_dir
         self.dev_deps = dev_deps
-        self.source = source
 
     @classmethod
     def load(cls, file='pyproject.toml'):
@@ -222,18 +221,7 @@ class Config(object):
         dev_deps = config.get('dev-deps', {})
         dev_deps['build'] = build_deps
 
-        source_config = config['source']
-        source = Source(source_config['packages'])
-
-        for glob in source_config.get('include', []):
-            source.include(glob)
-        for glob in source_config.get('exclude', []):
-            source.exclude(glob)
-
-        return Config(env_dir, dev_deps, source)
+        return Config(env_dir, dev_deps)
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}(env_dir={self.env_dir!r}, '
-            f'dev_deps={self.dev_deps!r}, source={self.source!r})'
-        )
+        return f'{self.__class__.__name__}(env_dir={self.env_dir!r}, dev_deps={self.dev_deps!r})'
