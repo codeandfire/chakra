@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-def _subprocess_run(args, capture_output=False, env=None, **kwargs):
+def _subprocess_run(args, capture_output=True, env=None, **kwargs):
     """A simple wrapper around `subprocess.run()`.
 
     * This sets `shell=False` and `check=False` by default.
@@ -63,7 +63,7 @@ class Command(object):
     def __eq__(self, other):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
-    def run(self, capture_output=False):
+    def run(self, capture_output=True):
         # pass the current PATH.
         env_vars = self.env_vars.copy()
         env_vars['PATH'] = os.environ['PATH']

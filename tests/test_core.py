@@ -37,7 +37,7 @@ class TestCommand(unittest.TestCase):
     def test_echo(self):
         """Run an `echo` command."""
 
-        result = Command(['echo', 'foo']).run(capture_output=True)
+        result = Command(['echo', 'foo']).run()
         assert result.returncode == 0
         assert result.stdout == 'foo'
         assert result.stderr == ''
@@ -46,7 +46,7 @@ class TestCommand(unittest.TestCase):
     def test_ls(self):
         """Run an `ls -lh` command."""
 
-        result = Command(['ls', '-l', '-h']).run(capture_output=True)
+        result = Command(['ls', '-l', '-h']).run()
 
         assert result.returncode == 0
 
@@ -64,7 +64,7 @@ class TestCommand(unittest.TestCase):
             Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
-            result = Command(['mkdir', 'foo']).run(capture_output=True)
+            result = Command(['mkdir', 'foo']).run()
 
         assert result.returncode != 0
         assert result.stdout == ''
@@ -74,7 +74,7 @@ class TestCommand(unittest.TestCase):
         """Run a `python -c` command."""
 
         result = Command(
-            ['python', '-c', "print('Hello, world!')"]).run(capture_output=True)
+            ['python', '-c', "print('Hello, world!')"]).run()
         assert result.returncode == 0
         assert result.stdout == 'Hello, world!'
         assert result.stderr == ''
@@ -85,7 +85,7 @@ class TestCommand(unittest.TestCase):
         result = Command(
             ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
              Path('/foo/bar').as_uri()],
-        ).run(capture_output=True)
+        ).run()
 
         assert result.returncode != 0
         assert 'Looking in links:' in result.stdout
@@ -96,7 +96,7 @@ class TestCommand(unittest.TestCase):
         """Run a `python -m` command."""
 
         result = Command(
-            ['python', '-m', 'unittest', 'discover', '-h']).run(capture_output=True)
+            ['python', '-m', 'unittest', 'discover', '-h']).run()
         assert result.returncode == 0
         assert result.stdout.startswith('usage: python -m unittest discover')
         assert result.stderr == ''
@@ -104,7 +104,7 @@ class TestCommand(unittest.TestCase):
     def test_invalid(self):
         """Run an invalid command, i.e. a command that does not exist."""
 
-        result = Command(['foo']).run(capture_output=True)
+        result = Command(['foo']).run()
         assert result.returncode != 0
         assert result.stdout == ''
         assert result.stderr == 'command not found: foo'
@@ -115,7 +115,7 @@ class TestCommand(unittest.TestCase):
 
         command = Command(['/bin/sh', '-c', 'echo $FOO $BAR'],
                           env_vars={'FOO': 'bar', 'BAR': 'foo'})
-        result = command.run(capture_output=True)
+        result = command.run()
         assert result.stdout == 'bar foo'
 
     @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
@@ -124,7 +124,7 @@ class TestCommand(unittest.TestCase):
 
         command = Command(['powershell', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
-        result = command.run(capture_output=True)
+        result = command.run()
         assert result.stdout == 'bar\nfoo'
 
 
@@ -137,7 +137,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
-            result = Hook(Path('foo.py')).run(capture_output=True)
+            result = Hook(Path('foo.py')).run()
 
         assert result.stdout == 'foo'
 
@@ -149,7 +149,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo')).run(capture_output=True)
+            result = Hook(Path('foo')).run()
 
         assert result.stdout == 'foo'
 
@@ -161,7 +161,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo.sh')).run(capture_output=True)
+            result = Hook(Path('foo.sh')).run()
 
         assert result.stdout == 'foo'
 
@@ -173,7 +173,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
-            result = Hook(Path('foo.ps1')).run(capture_output=True)
+            result = Hook(Path('foo.ps1')).run()
 
         assert result.stdout == 'foo'
 
@@ -186,7 +186,7 @@ class TestHook(unittest.TestCase):
                 f.write('dir')
 
             with self.assertRaises(RuntimeError):
-                Hook(Path('foo.bat')).run(capture_output=True)
+                Hook(Path('foo.bat')).run()
 
 
 class TestEnvironment(unittest.TestCase):
@@ -197,7 +197,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
 
             assert env_path.exists()
             assert env.activate_script.exists()
@@ -220,7 +220,7 @@ class TestEnvironment(unittest.TestCase):
 
             env = Environment(env_path)
 
-            env.create(capture_output=True)
+            env.create()
             assert not env.is_activated
 
             # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
@@ -245,7 +245,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
 
             assert not env.has_installed('setuptools')
             assert not env.has_installed('wheel')
@@ -256,7 +256,7 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
 
             assert env.has_installed('pip')
 
@@ -269,12 +269,12 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
             env.activate()
 
-            version = version_cmd.run(capture_output=True).stdout
-            upgrade_cmd.run(capture_output=True)
-            new_version = version_cmd.run(capture_output=True).stdout
+            version = version_cmd.run().stdout
+            upgrade_cmd.run()
+            new_version = version_cmd.run().stdout
 
         assert version == new_version
 
@@ -284,12 +284,12 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
             env.activate()
 
             Command(
                 ['pip', 'install', 'tabulate==0.8.4', 'build==0.4.0']
-            ).run(capture_output=True)
+            ).run()
 
             assert env.has_installed('tabulate', '0.8.4')
             assert env.has_installed('build', '0.4.0')
@@ -300,12 +300,12 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
             env.activate()
 
-            Command(['pip', 'install', 'tabulate']).run(capture_output=True)
+            Command(['pip', 'install', 'tabulate']).run()
 
-            result = Command(['python', '-c', '"import tabulate"']).run(capture_output=True)
+            result = Command(['python', '-c', '"import tabulate"']).run()
 
         assert result.stdout == ''
         assert result.stderr == ''
@@ -316,12 +316,12 @@ class TestEnvironment(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             env_path = Path(temp_dir) / Path('.venv')
             env = Environment(env_path)
-            env.create(capture_output=True)
+            env.create()
             env.activate()
 
-            Command(['pip', 'install', 'build']).run(capture_output=True)
+            Command(['pip', 'install', 'build']).run()
 
-            result = Command(['pyproject-build', '-h']).run(capture_output=True)
+            result = Command(['pyproject-build', '-h']).run()
 
         assert result.stdout != ''
         assert result.stderr == ''
