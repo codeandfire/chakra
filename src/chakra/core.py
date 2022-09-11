@@ -57,10 +57,8 @@ class Command(object):
         return self.tokens == other.tokens and self.env_vars == other.env_vars
 
     def run(self, capture_output=False):
-        # pass the current PATH.
         env_vars = self.env_vars.copy()
-        env_vars['PATH'] = os.environ['PATH']
-
+        env_vars['PATH'] = os.environ['PATH']    # pass the current PATH.
         return _subprocess_run(self.tokens, capture_output=capture_output, env=env_vars)
 
 
@@ -72,9 +70,7 @@ class Hook(Command):
 
         if self.script_path.suffix == '.ps1':
             self.interpreter = 'powershell'
-
             super().__init__([self.interpreter, '-File', str(self.script_path)])
-
         else:
             if self.script_path.suffix == '.py':
                 self.interpreter = 'python'
@@ -86,7 +82,6 @@ class Hook(Command):
                     "only Python ('.py' extension), Bash (no extension or '.sh' "
                     "extension) and Powershell ('.ps1' extension) scripts are supported."
                 )
-
             super().__init__([self.interpreter, str(self.script_path)])
 
     def __repr__(self):
