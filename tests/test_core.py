@@ -7,7 +7,7 @@ from pathlib import Path
 import virtualenv
 
 from chakra.core import Command, Environment, Hook
-from chakra._utils import tempfile
+from chakra._utils import NotSupportedError, tempfile
 
 
 def make_directories(structure, at=Path('.')):
@@ -177,7 +177,7 @@ class TestHook(unittest.TestCase):
             os.chdir(temp_dir)
             with open('foo.bat', 'w') as f:
                 f.write('dir')
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(NotSupportedError):
                 Hook(Path('foo.bat')).run()
 
 

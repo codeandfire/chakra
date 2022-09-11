@@ -3,9 +3,7 @@ import functools
 import os
 
 from .core import Command
-
-class UnsupportedPlatformException(Exception):
-    pass
+from ._utils import NotSupportedError
 
 class OpSystem(enum.Enum):
     WINDOWS = 'nt'
@@ -23,8 +21,7 @@ class OpSystem(enum.Enum):
         for cand_os in cls:
             if plat_os == cand_os.value:
                 return cand_os
-        raise UnsupportedPlatformException(
-            f'unsupported operating system (or kernel) {plat_os!r}')
+        raise NotSupportedError(f'unsupported operating system (or kernel) {plat_os!r}')
 
 class Arch(enum.Enum):
     INTEL_AMD_32_BIT = ('x86', 'i386', 'i586', 'i686')
@@ -42,4 +39,4 @@ class Arch(enum.Enum):
         for cand_ar in cls:
             if plat_ar in cand_ar.value:
                 return cand_ar
-        raise UnsupportedPlatformException(f'unsupported architecture {plat_ar!r}')
+        raise NotSupportedError(f'unsupported architecture {plat_ar!r}')

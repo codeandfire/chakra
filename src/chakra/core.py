@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ._utils import NotSupportedError
 
 def _subprocess_run(args, capture_output=True, env=None):
     """A simple wrapper around `subprocess.run()`.
@@ -77,9 +78,9 @@ class Hook(Command):
 
     @staticmethod
     def _unsupported_ext(ext):
-        raise RuntimeError(
-            f"unsupported extension {ext}: only Python (.py), Bash (no extension or .sh),"
-            " and Powershell (.ps1) scripts are supported")
+        raise NotSupportedError(
+            f"unsupported hook extension {ext}: only Python (.py), Bash (no extension or "
+            ".sh), and Powershell (.ps1) scripts are supported")
 
     def __repr__(self):
         return f'{self.__class__.__name__}(interpreter={self.interpreter!r}, script={self.script!r})'
