@@ -142,17 +142,17 @@ class Environment(object):
 
     @property
     def activate_script(self):
-        if os.name == 'posix':
-            return self.path / 'bin' / 'activate_this.py'
-        else:
+        if OpSystem.find() == OpSystem.WINDOWS:
             return self.path / 'Scripts' / 'activate_this.py'
+        else:
+            return self.path / 'bin' / 'activate_this.py'
 
     @property
     def python_executable(self):
-        if os.name == 'posix':
-            return self.path / 'bin' / self.python.name
-        else:
+        if OpSystem.find() == OpSystem.WINDOWS:
             return self.path / 'Scripts' / self.python.name
+        else:
+            return self.path / 'bin' / self.python.name
 
     @property
     def site_packages(self):
