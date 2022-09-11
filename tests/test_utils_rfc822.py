@@ -40,8 +40,7 @@ class Test(unittest.TestCase):
     def test_loads(self):
         """Test conversion from RFC 822 formatted text back to data."""
 
-        headers, body = rfc822.loads(self._text)
-        assert (headers, body) == (self._headers, self._body)
+        assert rfc822.loads(self._text) == (self._headers, self._body)
 
     def test_identity(self):
         """Test whether identity holds.
@@ -53,7 +52,6 @@ class Test(unittest.TestCase):
 
         assert rfc822.loads(rfc822.dumps(self._headers, self._body)) == \
             (self._headers, self._body)
-
         assert rfc822.dumps(*rfc822.loads(self._text)) == self._text
 
 
@@ -64,7 +62,6 @@ class TestBoundaryCases(unittest.TestCase):
 
         headers, body = {}, ''
         text = '\n'
-
         assert rfc822.dumps(headers, body) == text
         assert rfc822.loads(text) == (headers, body)
 
@@ -79,7 +76,6 @@ class TestBoundaryCases(unittest.TestCase):
 
         # the `\n\n` is added outside the `textwrap.dedent()` argument so that it is not
         # removed by the `.strip()` method.
-
         text = textwrap.dedent("""
             foo: bar
             foo: baz
@@ -87,7 +83,6 @@ class TestBoundaryCases(unittest.TestCase):
                     bar
             baz: foo
         """).strip() + '\n\n'
-
         assert rfc822.dumps(headers, body) == text
         assert rfc822.loads(text) == (headers, body)
 
@@ -96,9 +91,7 @@ class TestBoundaryCases(unittest.TestCase):
 
         headers = {}
         body = 'foo bar\nbaz'
-
         text = '\nfoo bar\nbaz'
-
         assert rfc822.dumps(headers, body) == text
         assert rfc822.loads(text) == (headers, body)
 
@@ -108,7 +101,6 @@ class TestBoundaryCases(unittest.TestCase):
 
         headers = {'foo': [], 'bar': []}
         body = 'foo bar\nbaz'
-
         text = textwrap.dedent("""
             foo: 
             bar: 
@@ -116,7 +108,6 @@ class TestBoundaryCases(unittest.TestCase):
             foo bar
             baz
         """).strip()
-
         assert rfc822.dumps(headers, body) == text
 
     @unittest.skip('currently failing')
@@ -128,7 +119,6 @@ class TestBoundaryCases(unittest.TestCase):
             'bar': ['', 'baz'],
         }
         body = 'foo bar\nbaz'
-
         text = textwrap.dedent("""
             foo: bar
             foo: 
@@ -139,7 +129,6 @@ class TestBoundaryCases(unittest.TestCase):
             foo bar
             baz
         """).strip()
-
         assert rfc822.dumps(headers, body) == text
 
     def test_two_newlines_in_value_case1(self):
@@ -154,7 +143,6 @@ class TestBoundaryCases(unittest.TestCase):
             'bar': ['baz\nfoo\n\n\nbar', 'foo', 'baz'],
         }
         body = 'foo bar\nbaz'
-
         text = textwrap.dedent("""
             foo: bar
             foo: baz
@@ -169,7 +157,6 @@ class TestBoundaryCases(unittest.TestCase):
             foo bar
             baz
         """).strip()
-
         assert rfc822.dumps(headers, body) == text
 
     def test_two_newlines_in_value_case2(self):
@@ -204,7 +191,6 @@ class TestBoundaryCases(unittest.TestCase):
             'bar': ['baz\nfoo\n\n\nbar', 'foo', 'baz'],
         }
         body = 'foo bar\nbaz'
-
         assert rfc822.loads(text) != (headers, body)
 
     def test_colon_without_space(self):
@@ -227,5 +213,4 @@ class TestBoundaryCases(unittest.TestCase):
         # generated.
         headers = {'foo': ['bar', 'baz'], 'bar': ['baz', 'foo']}
         body = 'foo bar\nbaz'
-
         assert rfc822.loads(text) != (headers, body)
