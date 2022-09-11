@@ -8,15 +8,17 @@ from pathlib import Path
 
 
 def _subprocess_run(args, capture_output=False, env=None, **kwargs):
-    """A simple wrapper around `subprocess.run()` with `shell=False` and `check=False`.
+    """A simple wrapper around `subprocess.run()`.
 
-    This wrapper basically transforms any `FileNotFoundError` exception that may be raised
-    due to the fact that the given command is not found, into a regular
-    `subprocess.CompletedProcess` result.
+    * This sets `shell=False` and `check=False` by default.
+    * Transforms `FileNotFoundError`s occuring due to a command not being found into a
+      regular `subprocess.CompletedProcess` result, with an error message and an exit code
+      of 127.
+    * Strips leading/trailing whitespace from stdout and stderr, if it is captured.
     """
 
     try:
-        return subprocess.run(
+        result = subprocess.run(
             args, shell=False, check=False, text=True, capture_output=capture_output,
             env=env, **kwargs)
 
@@ -35,8 +37,13 @@ def _subprocess_run(args, capture_output=False, env=None, **kwargs):
         # 127 is the exit code returned by the shell in the case of a command not found
         # error, on all platforms (Linux / Windows / MacOS).
         # hence the choice of this exit code.
-        return subprocess.CompletedProcess(
+        result = subprocess.CompletedProcess(
             args=args, returncode=127, stdout=stdout, stderr=stderr)
+    else:
+        if capture_output:
+            result.stdout, result.stderr = result.stdout.strip(), result.stderr.strip()
+
+    return result
 
 
 class Command(object):

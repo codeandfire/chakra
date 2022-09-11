@@ -39,8 +39,8 @@ class TestCommand(unittest.TestCase):
 
         result = Command(['echo', 'foo']).run(capture_output=True)
         assert result.returncode == 0
-        assert result.stdout.strip() == 'foo'
-        assert result.stderr.strip() == ''
+        assert result.stdout == 'foo'
+        assert result.stderr == ''
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_ls(self):
@@ -51,9 +51,9 @@ class TestCommand(unittest.TestCase):
         assert result.returncode == 0
 
         # output of `ls -lh` will always have multiple lines.
-        assert len(result.stdout.strip().split(os.linesep)) > 1
+        assert len(result.stdout.split(os.linesep)) > 1
 
-        assert result.stderr.strip() == ''
+        assert result.stderr == ''
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_mkdir(self):
@@ -67,8 +67,8 @@ class TestCommand(unittest.TestCase):
             result = Command(['mkdir', 'foo']).run(capture_output=True)
 
         assert result.returncode != 0
-        assert result.stdout.strip() == ''
-        assert result.stderr.strip() != ''
+        assert result.stdout == ''
+        assert result.stderr != ''
 
     def test_python_c(self):
         """Run a `python -c` command."""
@@ -76,8 +76,8 @@ class TestCommand(unittest.TestCase):
         result = Command(
             ['python', '-c', "print('Hello, world!')"]).run(capture_output=True)
         assert result.returncode == 0
-        assert result.stdout.strip() == 'Hello, world!'
-        assert result.stderr.strip() == ''
+        assert result.stdout == 'Hello, world!'
+        assert result.stderr == ''
 
     def test_pip(self):
         """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
@@ -88,8 +88,8 @@ class TestCommand(unittest.TestCase):
         ).run(capture_output=True)
 
         assert result.returncode != 0
-        assert 'Looking in links:' in result.stdout.strip()
-        for line in result.stderr.strip().split(os.linesep):
+        assert 'Looking in links:' in result.stdout
+        for line in result.stderr.split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
     def test_python_m(self):
@@ -98,8 +98,8 @@ class TestCommand(unittest.TestCase):
         result = Command(
             ['python', '-m', 'unittest', 'discover', '-h']).run(capture_output=True)
         assert result.returncode == 0
-        assert result.stdout.strip().startswith('usage: python -m unittest discover')
-        assert result.stderr.strip() == ''
+        assert result.stdout.startswith('usage: python -m unittest discover')
+        assert result.stderr == ''
 
     def test_invalid(self):
         """Run an invalid command, i.e. a command that does not exist."""
@@ -107,7 +107,7 @@ class TestCommand(unittest.TestCase):
         result = Command(['foo']).run(capture_output=True)
         assert result.returncode != 0
         assert result.stdout == ''
-        assert result.stderr.strip() == 'command not found: foo'
+        assert result.stderr == 'command not found: foo'
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_env_vars_sh(self):
@@ -116,7 +116,7 @@ class TestCommand(unittest.TestCase):
         command = Command(['/bin/sh', '-c', 'echo $FOO $BAR'],
                           env_vars={'FOO': 'bar', 'BAR': 'foo'})
         result = command.run(capture_output=True)
-        assert result.stdout.strip() == 'bar foo'
+        assert result.stdout == 'bar foo'
 
     @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
     def test_env_vars_powershell(self):
@@ -125,7 +125,7 @@ class TestCommand(unittest.TestCase):
         command = Command(['powershell', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run(capture_output=True)
-        assert result.stdout.strip() == 'bar\nfoo'
+        assert result.stdout == 'bar\nfoo'
 
 
 class TestHook(unittest.TestCase):
@@ -139,7 +139,7 @@ class TestHook(unittest.TestCase):
                 f.write("print('foo')")
             result = Hook(Path('foo.py')).run(capture_output=True)
 
-        assert result.stdout.strip() == 'foo'
+        assert result.stdout == 'foo'
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_bash(self):
@@ -151,7 +151,7 @@ class TestHook(unittest.TestCase):
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(Path('foo')).run(capture_output=True)
 
-        assert result.stdout.strip() == 'foo'
+        assert result.stdout == 'foo'
 
     @unittest.skipIf(os.name == 'nt', 'on windows system')
     def test_bash_sh_extension(self):
@@ -163,7 +163,7 @@ class TestHook(unittest.TestCase):
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(Path('foo.sh')).run(capture_output=True)
 
-        assert result.stdout.strip() == 'foo'
+        assert result.stdout == 'foo'
 
     @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
     def test_powershell(self):
@@ -175,7 +175,7 @@ class TestHook(unittest.TestCase):
                 f.write("echo 'foo'")
             result = Hook(Path('foo.ps1')).run(capture_output=True)
 
-        assert result.stdout.strip() == 'foo'
+        assert result.stdout == 'foo'
 
     def test_unsupported(self):
         """Test a hook with an unsupported extension."""
