@@ -1,11 +1,11 @@
 import enum
 import functools
 import os
+import pathlib
 import shlex
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 from ._utils import NotSupportedError
 
@@ -130,8 +130,8 @@ class Environment(object):
     """A virtual environment."""
 
     def __init__(self, path, python='python'):
-        self.path = Path(path)
-        self.python = Path(shutil.which(python)).resolve()
+        self.path = pathlib.Path(path)
+        self.python = pathlib.Path(shutil.which(python)).resolve()
         self.is_activated = False
 
     def __repr__(self):
