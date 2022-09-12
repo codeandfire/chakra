@@ -3,9 +3,9 @@ import functools
 import io
 import pathlib
 
-from chakra._utils import ini
-from chakra._utils import rfc822
-from chakra._utils import tomllib
+from chakra.utils import ini
+from chakra.utils import rfc822
+from chakra.utils import tomllib
 
 from chakra.core import Environment
 

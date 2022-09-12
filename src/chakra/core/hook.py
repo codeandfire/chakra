@@ -1,5 +1,5 @@
 from .command import Command
-from .._utils import NotSupportedError
+from ..utils import NotSupportedError
 
 class Hook(Command):
     """An executable script."""

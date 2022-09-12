@@ -1,7 +1,7 @@
 import unittest
 import textwrap
 
-from chakra._utils import rfc822
+from chakra.utils import rfc822
 
 
 class Test(unittest.TestCase):

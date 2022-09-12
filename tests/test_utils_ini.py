@@ -1,7 +1,7 @@
 import unittest
 import textwrap
 
-from chakra._utils import ini
+from chakra.utils import ini
 
 
 class Test(unittest.TestCase):
