@@ -2,7 +2,7 @@ import os
 import shlex
 import subprocess
 
-from .._utils import NotSupportedError
+from ..utils import NotSupportedError
 
 def _subprocess_run(args, capture_output=True, env=None):
     """A simple wrapper around `subprocess.run()`.
