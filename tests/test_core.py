@@ -6,7 +6,7 @@ from pathlib import Path
 
 import virtualenv
 
-from chakra.core import Command, Environment, Hook
+from chakra.core import Command, Environment, Hook, OpSystem
 from chakra._utils import NotSupportedError, tempfile
 
 
