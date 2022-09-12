@@ -47,7 +47,7 @@ class Hook(Command):
     """An executable script."""
 
     def __init__(self, script_path):
-        self.script_path = script_path
+        self.script_path = Path(script_path)
         if self.script_path.suffix == '.py':
             self.interpreter = 'python'
         elif self.script_path.suffix == '' or self.script_path.suffix == '.sh':
