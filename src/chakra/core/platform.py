@@ -2,8 +2,8 @@ import enum
 import functools
 import os
 
-from .core import Command
-from ._utils import NotSupportedError
+from .command import Command
+from .._utils import NotSupportedError
 
 class OpSystem(enum.Enum):
     WINDOWS = 'nt'
