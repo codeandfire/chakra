@@ -1,24 +1,49 @@
+import enum
 import pathlib
 
 from .command import Command
+from .platform import OpSystem
 from ..utils import NotSupportedError
+
+class _HookType(enum.Enum):
+    BASH = ('', '.sh')
+    POWERSHELL = ('.ps1',)
+    PYTHON = ('.py',)
+
+    @classmethod
+    def identify(cls, fpath):
+        ext = fpath.suffix
+        for type_ in cls:
+            if ext in type_.value:
+                return type_
+        raise NotSupportedError(f'unsupported hook extension {ext}')
+
+    @property
+    def interpreter(self):
+        if self == self.__class__.POWERSHELL:
+            return ('powershell', '-File')
+        else:
+            return (self.name.lower(),)
+
+    def is_compat(self, opsys):
+        if self == self.__class__.PYTHON:
+            return True
+        else:
+            if opsys == OpSystem.WINDOWS:
+                if self == self.__class__.POWERSHELL:
+                    return True
+            else:
+                if self == self.__class__.BASH:
+                    return True
+        return False
 
 class Hook(Command):
     """An executable script."""
 
     def __init__(self, script):
-        self.script = pathlib.Path(script)
-        if self.script.suffix == '.ps1':
-            self.interpreter = 'powershell'
-            super().__init__([self.interpreter, '-File', str(self.script)])
-        else:
-            if self.script.suffix == '.py':
-                self.interpreter = 'python'
-            elif self.script.suffix == '' or self.script.suffix == '.sh':
-                self.interpreter = 'bash'
-            else:
-                raise NotSupportedError(f'unsupported hook extension {self.script.suffix}')
-            super().__init__([self.interpreter, str(self.script)])
+        script = pathlib.Path(script)
+        self._type = _HookType.identify(script)
+        super().__init__(list(self._type.interpreter) + [str(script)])
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}(interpreter={self.interpreter!r}, script={self.script!r})'
+    def is_compat(self, opsys):
+        return self._type.is_compat(opsys)
