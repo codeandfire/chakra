@@ -40,7 +40,3 @@ class Arch(enum.Enum):
             if plat_ar in cand_ar.value:
                 return cand_ar
         raise NotSupportedError(f'unsupported architecture {plat_ar!r}')
-
-class Python(enum.Enum):
-    CPYTHON = 'cp'
-    PYPY = 'pp'
