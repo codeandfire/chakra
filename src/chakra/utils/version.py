@@ -1,3 +1,6 @@
+import functools
+import re
+
 def _version_cmp(nver1, nver2):
     """Compare versions in the form of n-dimensional lists/tuples."""
     assert len(nver1) == len(nver2), 'cannot compare versions of differing lengths'
@@ -14,43 +17,45 @@ def _version_cmp(nver1, nver2):
 class Version(object):
     """Numerical representation of a version."""
 
-    def __init__(self, major, minor):
+    def __init__(self, major, minor=None, patch=None):
         self.major = major
         self.minor = minor
+        self.patch = patch
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(major={self.major}, minor={self.minor})'
+        return f'{self.__class__.__name__}(major={self.major}, minor={self.minor}, patch={self.patch})'
+
+    def _totuple(self):
+        tuple_ = (self.major, self.minor, self.patch)
+        return tuple(t for t in tuple_ if t is not None)
 
     def __str__(self):
-        return f'{self.major}.{self.minor}'
+        return '.'.join(str(i) for i in self._totuple())
 
-    def __len__(self):
-        return 2
+    # the `cached_property` decorator prevents the regex from being recompiled on every
+    # call to this property.
 
-    def __getitem__(self, idx):
-        if idx == 0:
-            return self.major
-        elif idx == 1:
-            return self.minor
-        else:
-            raise IndexError('version is of the form major.minor')
+    @classmethod
+    @functools.cached_property
+    def regex(cls):
+        return re.compile(r'(\d+(?:\.\d+){0,2})')
 
     @classmethod
     def parse(cls, verstr):
         """Parse a version string."""
         ver = verstr.split('.')
-        assert len(ver) == 2, 'version must be of the form major.minor'
+        assert len(ver) <= 3, 'version must have at most 3 fields major, minor and patch'
         assert all(v.isdigit() for v in ver), 'version must contain only digits'
         return cls(*(int(v) for v in ver))
 
     def __gt__(self, other):
-        return _version_cmp(tuple(self), tuple(other)) == '>'
+        return _version_cmp(self._totuple(), other._totuple()) == '>'
 
     def __lt__(self, other):
-        return _version_cmp(tuple(self), tuple(other)) == '<'
+        return _version_cmp(self._totuple(), other._totuple()) == '<'
 
     def __eq__(self, other):
-        return _version_cmp(tuple(self), tuple(other)) == '='
+        return _version_cmp(self._totuple(), other._totuple()) == '='
 
     def __ge__(self, other):
         return (self > other) or (self == other)
