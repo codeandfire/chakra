@@ -1,4 +1,5 @@
 import json
+import shutil
 import random
 import unittest
 
@@ -58,6 +59,19 @@ class TestNSubdirectories(unittest.TestCase):
                 with self.subTest(i=i):
                     assert self.root.subdirs[f'subdir{i}'].path.exists()
                     assert self.root.subdirs[f'subdir{i}'].files[f'file{i}.txt'].path.exists()
+
+    def test_load(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.root.create(temp_dir)
+
+            del self.root; self.setUp()                 # reset all context
+            self.root.load(temp_dir)                    # should happen without errors
+
+            i = self.NDIRS-1                            # selected case
+            self.root.subdirs[f'subdir{i}'].files[f'file{i}.txt'].path.unlink()
+            del self.root; self.setUp()
+            with self.assertRaises(RuntimeError):
+                self.root.load(temp_dir)
 
 class TestBinaryTree(unittest.TestCase):
     LEVEL = 5
@@ -127,6 +141,26 @@ class TestBinaryTree(unittest.TestCase):
                     i = i2 if random.random() > 0.5 else i1
                     chosen = chosen.subdirs[f'subdir{l}{i}']
 
+    def test_load(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.root.create(temp_dir)
+
+            del self.root; self.setUp()
+            self.root.load(temp_dir)
+
+            # delete a randomly chosen directory at level (self.LEVEL-2) in the tree.
+
+            i, chosen = 0, self.root
+            for l in range(2, self.LEVEL-1):
+                i1, i2 = 2*i, 2*i+1
+                i = i2 if random.random() > 0.5 else i1
+                chosen = chosen.subdirs[f'subdir{l}{i}']
+            shutil.rmtree(chosen.path)
+
+            del self.root; self.setUp()
+            with self.assertRaises(RuntimeError):
+                self.root.load()
+
 class TestFilesOnly(unittest.TestCase):
     NFILES = 10
 
@@ -160,6 +194,18 @@ class TestFilesOnly(unittest.TestCase):
             for i in range(self.NFILES):
                 assert self.root.files[f'file{i}.txt'].path.exists()
             assert len(self.root.subdirs) == 0
+
+    def test_load(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.root.create(temp_dir)
+
+            del self.root; self.setUp()
+            self.root.load(temp_dir)
+
+            shutil.rmtree(self.root.path)               # remove everything
+            del self.root; self.setUp()
+            with self.assertRaises(RuntimeError):
+                self.root.load(temp_dir)
 
 class TestEmptyDirectoriesAndFiles(unittest.TestCase):
     NDIRS = 10
@@ -200,3 +246,18 @@ class TestEmptyDirectoriesAndFiles(unittest.TestCase):
                 assert self.root.subdirs[f'subdir{i}'].path.exists()
                 assert len(self.root.subdirs[f'subdir{i}'].subdirs) == 0
                 assert len(self.root.subdirs[f'subdir{i}'].files) == 0
+
+    def test_load(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            self.root.create(temp_dir)
+
+            del self.root; self.setUp()
+            self.root.load(temp_dir)
+
+            # delete a randomly chosen directory.
+
+            i = random.choice(range(0, self.NDIRS))
+            self.root.subdirs[f'subdir{i}'].path.rmdir()
+            del self.root; self.setUp()
+            with self.assertRaises(RuntimeError):
+                self.root.load(temp_dir)

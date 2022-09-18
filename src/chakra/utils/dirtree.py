@@ -20,6 +20,15 @@ class HFile(object):
         self.parent = _path(parent)
         self.path.touch()
 
+    def load(self, parent=pathlib.Path.cwd()):
+        parent = _path(parent)
+        for item in parent.iterdir():
+            if item.name == str(self.name):
+                self.parent = parent
+                break
+        else:
+            raise RuntimeError(f'could not load file from {parent}')
+
 class HDirectory(object):
 
     def __init__(self, name, files=[], subdirs=[]):
@@ -53,3 +62,14 @@ class HDirectory(object):
             file.create(parent=self.path)
         for subdir in self._subdirs:
             subdir.create(parent=self.path)
+
+    def load(self, parent=pathlib.Path.cwd()):
+        parent = _path(parent)
+        for item in parent.iterdir():
+            if item.name == str(self.name):
+                self.parent = parent
+                break
+        else:
+            raise RuntimeError(f'could not load directory from {parent}')
+        for item in self._files + self._subdirs:
+            item.load(parent=self.path)
