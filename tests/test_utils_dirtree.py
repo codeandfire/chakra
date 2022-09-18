@@ -34,9 +34,9 @@ class TestNSubdirectories(unittest.TestCase):
 
     @unittest.skipIf(NO_TREE, 'tree is not installed')
     def test_structure(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
-            tree, report = _run_tree(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
+            tree, report = _run_tree(tmp)
 
         assert len(tree) == 1                           # only one directory, the 'root'
         assert tree[0]['name'] == 'root'
@@ -52,8 +52,8 @@ class TestNSubdirectories(unittest.TestCase):
         assert report['directories'] == self.NDIRS+1    # subdirectories + root
 
     def test_api(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             for i in (0, self.NDIRS//2, self.NDIRS-1):  # some selected cases
                 with self.subTest(i=i):
@@ -61,17 +61,17 @@ class TestNSubdirectories(unittest.TestCase):
                     assert self.root.subdirs[f'subdir{i}'].files[f'file{i}.txt'].path.exists()
 
     def test_load(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             del self.root; self.setUp()                 # reset all context
-            self.root.load(temp_dir)                    # should happen without errors
+            self.root.load(tmp)                    # should happen without errors
 
             i = self.NDIRS-1                            # selected case
             self.root.subdirs[f'subdir{i}'].files[f'file{i}.txt'].path.unlink()
             del self.root; self.setUp()
             with self.assertRaises(RuntimeError):
-                self.root.load(temp_dir)
+                self.root.load(tmp)
 
 class TestBinaryTree(unittest.TestCase):
     LEVEL = 5
@@ -98,9 +98,9 @@ class TestBinaryTree(unittest.TestCase):
 
     @unittest.skipIf(NO_TREE, 'tree is not installed')
     def test_structure(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
-            tree, report = _run_tree(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
+            tree, report = _run_tree(tmp)
 
         # "unpack" the tree, asserting at each "unpacking" that the number of contents
         # unpacked are 2.
@@ -123,8 +123,8 @@ class TestBinaryTree(unittest.TestCase):
         assert report['directories'] == 2 ** (self.LEVEL - 1) - 1
 
     def test_api(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             # walk a random path down the tree.
 
@@ -142,11 +142,11 @@ class TestBinaryTree(unittest.TestCase):
                     chosen = chosen.subdirs[f'subdir{l}{i}']
 
     def test_load(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             del self.root; self.setUp()
-            self.root.load(temp_dir)
+            self.root.load(tmp)
 
             # delete a randomly chosen directory at level (self.LEVEL-2) in the tree.
 
@@ -170,9 +170,9 @@ class TestFilesOnly(unittest.TestCase):
 
     @unittest.skipIf(NO_TREE, 'test is not installed')
     def test_structure(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
-            tree, report = _run_tree(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
+            tree, report = _run_tree(tmp)
 
         assert len(tree) == 1
         assert tree[0]['name'] == 'root'
@@ -187,8 +187,8 @@ class TestFilesOnly(unittest.TestCase):
         assert report['directories'] == 1
 
     def test_api(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             assert self.root.path.exists()
             for i in range(self.NFILES):
@@ -196,16 +196,16 @@ class TestFilesOnly(unittest.TestCase):
             assert len(self.root.subdirs) == 0
 
     def test_load(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             del self.root; self.setUp()
-            self.root.load(temp_dir)
+            self.root.load(tmp)
 
             shutil.rmtree(self.root.path)               # remove everything
             del self.root; self.setUp()
             with self.assertRaises(RuntimeError):
-                self.root.load(temp_dir)
+                self.root.load(tmp)
 
 class TestEmptyDirectoriesAndFiles(unittest.TestCase):
     NDIRS = 10
@@ -218,9 +218,9 @@ class TestEmptyDirectoriesAndFiles(unittest.TestCase):
 
     @unittest.skipIf(NO_TREE, 'tree is not installed')
     def test_structure(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
-            tree, report = _run_tree(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
+            tree, report = _run_tree(tmp)
 
         assert len(tree) == 1
         assert tree[0]['name'] == 'root'
@@ -237,8 +237,8 @@ class TestEmptyDirectoriesAndFiles(unittest.TestCase):
         assert report['directories'] == self.NDIRS + 1
 
     def test_api(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             for i in range(self.NFILES):
                 assert self.root.files[f'file{i}.txt'].path.exists()
@@ -248,11 +248,11 @@ class TestEmptyDirectoriesAndFiles(unittest.TestCase):
                 assert len(self.root.subdirs[f'subdir{i}'].files) == 0
 
     def test_load(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            self.root.create(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.root.create(tmp)
 
             del self.root; self.setUp()
-            self.root.load(temp_dir)
+            self.root.load(tmp)
 
             # delete a randomly chosen directory.
 
@@ -260,4 +260,4 @@ class TestEmptyDirectoriesAndFiles(unittest.TestCase):
             self.root.subdirs[f'subdir{i}'].path.rmdir()
             del self.root; self.setUp()
             with self.assertRaises(RuntimeError):
-                self.root.load(temp_dir)
+                self.root.load(tmp)

@@ -35,8 +35,8 @@ class TestCommand(unittest.TestCase):
     def test_mkdir(self):
         """Run a `mkdir` command against an existing directory."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             pathlib.Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
@@ -108,8 +108,8 @@ class TestHook(unittest.TestCase):
     def test_python(self):
         """Test a Python hook."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
             result = Hook(pathlib.Path('foo.py')).run()
@@ -119,8 +119,8 @@ class TestHook(unittest.TestCase):
     def test_bash(self):
         """Test a Bash hook."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(pathlib.Path('foo')).run()
@@ -131,8 +131,8 @@ class TestHook(unittest.TestCase):
     def test_bash_sh_extension(self):
         """Test a Bash hook with an `.sh` extension."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(pathlib.Path('foo.sh')).run()
@@ -142,8 +142,8 @@ class TestHook(unittest.TestCase):
     def test_powershell(self):
         """Test a Powershell hook."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
             result = Hook(pathlib.Path('foo.ps1')).run()
@@ -152,8 +152,8 @@ class TestHook(unittest.TestCase):
     def test_unsupported(self):
         """Test a hook with an unsupported extension."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.bat', 'w') as f:
                 f.write('dir')
             with self.assertRaises(NotSupportedError):
@@ -165,8 +165,8 @@ class TestEnvironment(unittest.TestCase):
     def test_create(self):
         """Test creation of an environment."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env_path.exists()
@@ -183,8 +183,8 @@ class TestEnvironment(unittest.TestCase):
         directories that are relative to the directory of the environment.
         """
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             virtualenv.cli_run([str(env_path)])
             env = Environment(env_path)
             env.create()
@@ -203,8 +203,8 @@ class TestEnvironment(unittest.TestCase):
         including these two packages may save some time while creating the environment.
         """
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert not env.has_installed('setuptools')
@@ -213,8 +213,8 @@ class TestEnvironment(unittest.TestCase):
     def test_pip_installed(self):
         """Test that `pip` is installed in the environment."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env.has_installed('pip')
@@ -225,8 +225,8 @@ class TestEnvironment(unittest.TestCase):
         version_cmd = Command(['pip', '--version'])
         upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -239,8 +239,8 @@ class TestEnvironment(unittest.TestCase):
     def test_package_installs(self):
         """Test that package installs work in the environment."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -254,8 +254,8 @@ class TestEnvironment(unittest.TestCase):
     def test_package_imports(self):
         """Test that packages can be imported within the environment."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -269,8 +269,8 @@ class TestEnvironment(unittest.TestCase):
     def test_console_scripts(self):
         """Test that console scripts work in the environment."""
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
