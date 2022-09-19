@@ -3,7 +3,7 @@ import pathlib
 
 from .command import Command
 from .platform import OpSystem
-from ..utils import NotSupportedError
+from ..errors import NotSupportedError
 
 class _HookType(enum.Enum):
     BASH = ('', '.sh')

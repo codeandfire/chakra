@@ -5,7 +5,8 @@ import pathlib
 import sys
 
 from .command import Command
-from ..utils import NotSupportedError, Version
+from ..errors import NotSupportedError
+from ..utils import Version
 
 class OpSystem(enum.Enum):
     WINDOWS = 'nt'

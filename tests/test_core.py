@@ -7,7 +7,8 @@ import unittest
 import virtualenv
 
 from chakra.core import Command, Environment, Hook, OpSystem
-from chakra.utils import NotSupportedError, tempfile
+from chakra.errors import NotSupportedError
+from chakra.utils import tempfile
 
 
 class TestCommand(unittest.TestCase):
