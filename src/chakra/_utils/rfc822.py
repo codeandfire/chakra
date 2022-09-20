@@ -45,7 +45,7 @@ def loads(text):
             break
 
         try:
-            key, value = line.split(': ')
+            key, value = line.split(': ', maxsplit=1)
 
         except ValueError:
             # no colon in the line indicates that this is a continuation of the previous
