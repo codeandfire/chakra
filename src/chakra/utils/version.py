@@ -1,4 +1,3 @@
-import functools
 import re
 
 def _version_cmp(nver1, nver2):
@@ -17,6 +16,8 @@ def _version_cmp(nver1, nver2):
 class Version(object):
     """Numerical representation of a version."""
 
+    _regex = re.compile(r'(?P<major>\d+)(?:\.(?P<minor>\d+))?(?:\.(?P<patch>\d+))?')
+
     def __init__(self, major, minor=None, patch=None):
         self.major = major
         self.minor = minor
@@ -32,21 +33,11 @@ class Version(object):
     def __str__(self):
         return '.'.join(str(i) for i in self._totuple())
 
-    # the `cached_property` decorator prevents the regex from being recompiled on every
-    # call to this property.
-
-    @classmethod
-    @functools.cached_property
-    def regex(cls):
-        return re.compile(r'(\d+(?:\.\d+){0,2})')
-
     @classmethod
     def parse(cls, verstr):
-        """Parse a version string."""
-        ver = verstr.split('.')
-        assert len(ver) <= 3, 'version must have at most 3 fields major, minor and patch'
-        assert all(v.isdigit() for v in ver), 'version must contain only digits'
-        return cls(*(int(v) for v in ver))
+        match_ = cls._regex.match(verstr)
+        parsed = [int(g) if g is not None else None for g in match_.groups()]
+        return cls(*parsed)
 
     def __gt__(self, other):
         return _version_cmp(self._totuple(), other._totuple()) == '>'
