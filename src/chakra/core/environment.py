@@ -5,7 +5,6 @@ from .command import Command
 from .platform import OpSystem
 
 class Environment(object):
-    """A virtual environment."""
 
     def __init__(self, path, python='python'):
         self.path = pathlib.Path(path)

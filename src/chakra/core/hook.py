@@ -38,7 +38,6 @@ class _HookType(enum.Enum):
         return False
 
 class Hook(Command):
-    """An executable script."""
 
     def __init__(self, script):
         script = pathlib.Path(script)

@@ -3,20 +3,11 @@ import shlex
 import subprocess
 
 def _subprocess_run(args, capture_output=True, env=None):
-    """A simple wrapper around `subprocess.run()`.
-
-    * This sets `shell=False` and `check=False` by default.
-    * Transforms `FileNotFoundError`s occuring due to a command not being found into a
-      regular `subprocess.CompletedProcess` result, with an error message and an exit code
-      of 127.
-    * Strips leading/trailing whitespace from stdout and stderr, if it is captured.
-    """
-
     try:
         result = subprocess.run(
             args, shell=False, check=False, text=True, capture_output=capture_output,
             env=env)
-    except FileNotFoundError as exc:
+    except FileNotFoundError as exc:         # normalize this error
         err = f'command not found: {exc.filename}'
         if not capture_output:
             print(err, file=sys.stderr)
@@ -32,7 +23,6 @@ def _subprocess_run(args, capture_output=True, env=None):
     return result
 
 class Command(object):
-    """A shell command."""
 
     def __init__(self, tokens, env_vars={}):
         self.tokens = tokens

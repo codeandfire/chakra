@@ -1,7 +1,6 @@
 import re
 
 def _version_cmp(nver1, nver2):
-    """Compare versions in the form of n-dimensional lists/tuples."""
     assert len(nver1) == len(nver2), 'cannot compare versions of differing lengths'
     try:
         if nver1[0] > nver2[0]:
@@ -14,7 +13,6 @@ def _version_cmp(nver1, nver2):
         return '='
 
 class Version(object):
-    """Numerical representation of a version."""
 
     _regex = re.compile(
         r'^(?P<major>\d+)(?P<minor>\.\d+)?(?P<patch>\.\d+)?(?P<tag>\w+)?$')
