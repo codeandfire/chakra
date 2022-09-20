@@ -7,15 +7,14 @@ import unittest
 import virtualenv
 
 from chakra.core import Command, Environment, Hook, OpSystem
-from chakra.utils import NotSupportedError, tempfile
+from chakra.errors import NotSupportedError
+from chakra.utils import tempfile
 
 
 class TestCommand(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_echo(self):
-        """Run an `echo` command."""
-
         result = Command(['echo', 'foo']).run()
         assert result.returncode == 0
         assert result.stdout == 'foo'
@@ -23,8 +22,6 @@ class TestCommand(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_ls(self):
-        """Run an `ls -lh` command."""
-
         result = Command(['ls', '-l', '-h']).run()
         assert result.returncode == 0
         # output of `ls -lh` will always have multiple lines.
@@ -33,10 +30,8 @@ class TestCommand(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_mkdir(self):
-        """Run a `mkdir` command against an existing directory."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             pathlib.Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
@@ -47,8 +42,6 @@ class TestCommand(unittest.TestCase):
         assert result.stderr != ''
 
     def test_python_c(self):
-        """Run a `python -c` command."""
-
         result = Command(
             ['python', '-c', "print('Hello, world!')"]).run()
         assert result.returncode == 0
@@ -56,8 +49,6 @@ class TestCommand(unittest.TestCase):
         assert result.stderr == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
-
         result = Command(
             ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
              pathlib.Path('/foo/bar').as_uri()],
@@ -68,8 +59,6 @@ class TestCommand(unittest.TestCase):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
     def test_python_m(self):
-        """Run a `python -m` command."""
-
         result = Command(
             ['python', '-m', 'unittest', 'discover', '-h']).run()
         assert result.returncode == 0
@@ -77,8 +66,6 @@ class TestCommand(unittest.TestCase):
         assert result.stderr == ''
 
     def test_invalid(self):
-        """Run an invalid command, i.e. a command that does not exist."""
-
         result = Command(['foo']).run()
         assert result.returncode != 0
         assert result.stdout == ''
@@ -86,8 +73,6 @@ class TestCommand(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_env_vars_sh(self):
-        """Verify that environment variables are accessible to the command."""
-
         command = Command(['/bin/sh', '-c', 'echo $FOO $BAR'],
                           env_vars={'FOO': 'bar', 'BAR': 'foo'})
         result = command.run()
@@ -95,8 +80,6 @@ class TestCommand(unittest.TestCase):
 
     @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_env_vars_powershell(self):
-        """Verify that environment variables are accessible to the command."""
-
         command = Command(['powershell', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
         result = command.run()
@@ -106,10 +89,8 @@ class TestCommand(unittest.TestCase):
 class TestHook(unittest.TestCase):
 
     def test_python(self):
-        """Test a Python hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
             result = Hook(pathlib.Path('foo.py')).run()
@@ -117,10 +98,8 @@ class TestHook(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash(self):
-        """Test a Bash hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(pathlib.Path('foo')).run()
@@ -129,10 +108,8 @@ class TestHook(unittest.TestCase):
 
     @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash_sh_extension(self):
-        """Test a Bash hook with an `.sh` extension."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
             result = Hook(pathlib.Path('foo.sh')).run()
@@ -140,20 +117,16 @@ class TestHook(unittest.TestCase):
 
     @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_powershell(self):
-        """Test a Powershell hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
             result = Hook(pathlib.Path('foo.ps1')).run()
         assert result.stdout == 'foo'
 
     def test_unsupported(self):
-        """Test a hook with an unsupported extension."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.bat', 'w') as f:
                 f.write('dir')
             with self.assertRaises(NotSupportedError):
@@ -163,10 +136,8 @@ class TestHook(unittest.TestCase):
 class TestEnvironment(unittest.TestCase):
 
     def test_create(self):
-        """Test creation of an environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env_path.exists()
@@ -176,57 +147,41 @@ class TestEnvironment(unittest.TestCase):
             assert env.pyvenv_cfg.exists()
 
     def test_activate(self):
-        """Test if activation of an environment works.
-
-        This test works by checking the value of `PATH` before and after activating the
-        environment. After activating the environment, `PATH` should contain some
-        directories that are relative to the directory of the environment.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             virtualenv.cli_run([str(env_path)])
             env = Environment(env_path)
             env.create()
             assert not env.is_activated
+            # no path in `sys.path` should have anything to do with `env_path`
             assert all([not pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
             assert env.is_activated
+            # at least one path in `sys.path` should be relative to `env_path`
             assert any([pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
     def test_setuptools_wheel_not_installed(self):
-        """Test that `setuptools` and `wheel` are not installed in the environment.
-
-        The packages `setuptools` and `wheel` are not required by Chakra; if required by
-        other packages as build-time dependencies, they can be installed at that time. Not
-        including these two packages may save some time while creating the environment.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert not env.has_installed('setuptools')
             assert not env.has_installed('wheel')
 
     def test_pip_installed(self):
-        """Test that `pip` is installed in the environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             assert env.has_installed('pip')
 
     def test_pip_latest_version(self):
-        """The environment should come with the latest version of Pip."""
-
         version_cmd = Command(['pip', '--version'])
         upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -237,10 +192,8 @@ class TestEnvironment(unittest.TestCase):
         assert version == new_version
 
     def test_package_installs(self):
-        """Test that package installs work in the environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -252,10 +205,8 @@ class TestEnvironment(unittest.TestCase):
             assert env.has_installed('build', '0.4.0')
 
     def test_package_imports(self):
-        """Test that packages can be imported within the environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
@@ -267,10 +218,8 @@ class TestEnvironment(unittest.TestCase):
         assert result.stderr == ''
 
     def test_console_scripts(self):
-        """Test that console scripts work in the environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = pathlib.Path(temp_dir) / '.venv'
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
             env.activate()
