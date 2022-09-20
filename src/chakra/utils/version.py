@@ -16,37 +16,51 @@ def _version_cmp(nver1, nver2):
 class Version(object):
     """Numerical representation of a version."""
 
-    _regex = re.compile(r'(?P<major>\d+)(?:\.(?P<minor>\d+))?(?:\.(?P<patch>\d+))?')
+    _regex = re.compile(
+        r'^(?P<major>\d+)(?P<minor>\.\d+)?(?P<patch>\.\d+)?(?P<tag>\w+)?$')
 
-    def __init__(self, major, minor=None, patch=None):
+    def __init__(self, major, minor=None, patch=None, tag=None):
         self.major = major
         self.minor = minor
         self.patch = patch
+        self.tag = tag
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(major={self.major}, minor={self.minor}, patch={self.patch})'
+        return (
+            f'{self.__class__.__name__}(major={self.major}, minor={self.minor}, '
+            f'patch={self.patch}, tag={self.tag!r})')
 
-    def _totuple(self):
+    def _asnumeric(self):
         tuple_ = (self.major, self.minor, self.patch)
         return tuple(t for t in tuple_ if t is not None)
 
     def __str__(self):
-        return '.'.join(str(i) for i in self._totuple())
+        s = '.'.join(str(i) for i in self._asnumeric())
+        s += self.tag if self.tag is not None else ''
+        return s
 
     @classmethod
     def parse(cls, verstr):
         match_ = cls._regex.match(verstr)
-        parsed = [int(g) if g is not None else None for g in match_.groups()]
-        return cls(*parsed)
+        match_ = match_.groupdict()
+        for key, value in match_.items():
+            if value is not None:
+                if key in ('minor', 'patch'):
+                    value = value[1:]     # remove the leading .
+                if key != 'tag':
+                    value = int(value)
+                match_[key] = value
+        return cls(**match_)
 
     def __gt__(self, other):
-        return _version_cmp(self._totuple(), other._totuple()) == '>'
+        return _version_cmp(self._asnumeric(), other._asnumeric()) == '>'
 
     def __lt__(self, other):
-        return _version_cmp(self._totuple(), other._totuple()) == '<'
+        return _version_cmp(self._asnumeric(), other._asnumeric()) == '<'
 
     def __eq__(self, other):
-        return _version_cmp(self._totuple(), other._totuple()) == '='
+        return \
+            _version_cmp(self._asnumeric(), other._asnumeric()) == '=' and self.tag == other.tag
 
     def __ge__(self, other):
         return (self > other) or (self == other)
