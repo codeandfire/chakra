@@ -42,6 +42,7 @@ class Version(object):
     @classmethod
     def parse(cls, verstr):
         match_ = cls._regex.match(verstr)
+        assert match_ is not None
         match_ = match_.groupdict()
         for key, value in match_.items():
             if value is not None:

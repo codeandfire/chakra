@@ -43,25 +43,25 @@ class TestParse(unittest.TestCase):
         assert ver.patch is None
         assert ver.tag == 'a1'
 
-    @unittest.expectedFailure
     def test_four_fields(self):
-        Version.parse('3.8.9.10')
+        with self.assertRaises(AssertionError):
+            Version.parse('3.8.9.10')
 
-    @unittest.expectedFailure
     def test_non_digits(self):
-        Version.parse('3.11.abc')
+        with self.assertRaises(AssertionError):
+            Version.parse('3.11.abc')
 
-    @unittest.expectedFailure
     def test_weird(self):
-        Version.parse('.5.a7')
+        with self.assertRaises(AssertionError):
+            Version.parse('.5.a7')
 
-    @unittest.expectedFailure
     def test_weird2(self):
-        Version.parse('3..11')
+        with self.assertRaises(AssertionError):
+            Version.parse('3..11')
 
-    @unittest.expectedFailure
     def test_empty(self):
-        Version.parse('')
+        with self.assertRaises(AssertionError):
+            Version.parse('')
 
 class TestComparison(unittest.TestCase):
 
