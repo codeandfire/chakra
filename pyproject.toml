@@ -17,6 +17,3 @@ requires = []
 [tool.chakra.dev-deps]
 test = ["nose2[coverage_plugin]", "tomli-w"]
 fixes = ["flake8", "isort"]
-
-[tool.chakra.source]
-packages = ["chakra"]

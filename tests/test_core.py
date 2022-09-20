@@ -1,259 +1,231 @@
 import os
+import pathlib
 import subprocess
 import sys
 import unittest
-from pathlib import Path
 
 import virtualenv
 
-from chakra.core import Command, Environment, Hook
-from chakra._utils import tempfile
-
-
-def make_directories(structure, at=Path('.')):
-    """Create a directory structure.
-
-    For documentation on how this works, please refer: tests/make_directories.md
-    """
-
-    if isinstance(structure, tuple):
-        dir_name = structure[0]
-        dir_path = at / Path(dir_name)
-        dir_path.mkdir()
-        make_directories(structure[1], at=dir_path)
-
-    elif isinstance(structure, list):
-        for s in structure:
-            make_directories(s, at=at)
-
-    # it must be a string, i.e. a file name.
-    else:
-        (at / Path(structure)).touch()
+from chakra.core import Command, Environment, Hook, OpSystem
+from chakra.errors import NotSupportedError
+from chakra.utils import tempfile
 
 
 class TestCommand(unittest.TestCase):
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_echo(self):
-        """Run an `echo` command."""
-
-        result = Command(['echo', 'foo']).run(capture_output=True)
+        result = Command(['echo', 'foo']).run()
         assert result.returncode == 0
-        assert result.stdout.strip() == 'foo'
-        assert result.stderr.strip() == ''
+        assert result.stdout == 'foo'
+        assert result.stderr == ''
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_ls(self):
-        """Run an `ls -lh` command."""
-
-        result = Command(['ls', '-l', '-h']).run(capture_output=True)
-
+        result = Command(['ls', '-l', '-h']).run()
         assert result.returncode == 0
-
         # output of `ls -lh` will always have multiple lines.
-        assert len(result.stdout.strip().split(os.linesep)) > 1
+        assert len(result.stdout.split(os.linesep)) > 1
+        assert result.stderr == ''
 
-        assert result.stderr.strip() == ''
-
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_mkdir(self):
-        """Run a `mkdir` command against an existing directory."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-            Path('foo').mkdir()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
+            pathlib.Path('foo').mkdir()
 
             # `mkdir` against an existing directory will always throw an error.
-            result = Command(['mkdir', 'foo']).run(capture_output=True)
+            result = Command(['mkdir', 'foo']).run()
 
         assert result.returncode != 0
-        assert result.stdout.strip() == ''
-        assert result.stderr.strip() != ''
+        assert result.stdout == ''
+        assert result.stderr != ''
 
     def test_python_c(self):
-        """Run a `python -c` command."""
-
         result = Command(
-            ['python', '-c', "print('Hello, world!')"]).run(capture_output=True)
+            ['python', '-c', "print('Hello, world!')"]).run()
         assert result.returncode == 0
-        assert result.stdout.strip() == 'Hello, world!'
-        assert result.stderr.strip() == ''
+        assert result.stdout == 'Hello, world!'
+        assert result.stderr == ''
 
     def test_pip(self):
-        """Run the command `pip install foo bar baz --find-links file:///foo/bar`."""
-
         result = Command(
             ['pip', 'install', 'foo', 'bar', 'baz', '--find-links',
-             Path('/foo/bar').as_uri()],
-        ).run(capture_output=True)
-
+             pathlib.Path('/foo/bar').as_uri()],
+        ).run()
         assert result.returncode != 0
-        assert 'Looking in links:' in result.stdout.strip()
-        for line in result.stderr.strip().split(os.linesep):
+        assert 'Looking in links:' in result.stdout
+        for line in result.stderr.split(os.linesep):
             assert line.startswith('WARNING') or line.startswith('ERROR')
 
     def test_python_m(self):
-        """Run a `python -m` command."""
-
         result = Command(
-            ['python', '-m', 'unittest', 'discover', '-h']).run(capture_output=True)
+            ['python', '-m', 'unittest', 'discover', '-h']).run()
         assert result.returncode == 0
-        assert result.stdout.strip().startswith('usage: python -m unittest discover')
-        assert result.stderr.strip() == ''
+        assert result.stdout.startswith('usage: python -m unittest discover')
+        assert result.stderr == ''
 
     def test_invalid(self):
-        """Run an invalid command, i.e. a command that does not exist."""
-
-        result = Command(['foo']).run(capture_output=True)
+        result = Command(['foo']).run()
         assert result.returncode != 0
         assert result.stdout == ''
-        assert result.stderr.strip() == 'command not found: foo'
+        assert result.stderr == 'command not found: foo'
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_env_vars_sh(self):
-        """Verify that environment variables are accessible to the command."""
-
         command = Command(['/bin/sh', '-c', 'echo $FOO $BAR'],
                           env_vars={'FOO': 'bar', 'BAR': 'foo'})
-        result = command.run(capture_output=True)
-        assert result.stdout.strip() == 'bar foo'
+        result = command.run()
+        assert result.stdout == 'bar foo'
 
-    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_env_vars_powershell(self):
-        """Verify that environment variables are accessible to the command."""
-
         command = Command(['powershell', '-Command', 'echo $env:Foo $env:Bar'],
                           env_vars={'Foo': 'bar', 'Bar': 'foo'})
-        result = command.run(capture_output=True)
-        assert result.stdout.strip() == 'bar\nfoo'
+        result = command.run()
+        assert result.stdout == 'bar\nfoo'
 
 
 class TestHook(unittest.TestCase):
 
     def test_python(self):
-        """Test a Python hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.py', 'w') as f:
                 f.write("print('foo')")
-            result = Hook(Path('foo.py')).run(capture_output=True)
+            result = Hook(pathlib.Path('foo.py')).run()
+        assert result.stdout == 'foo'
 
-        assert result.stdout.strip() == 'foo'
-
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash(self):
-        """Test a Bash hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo')).run(capture_output=True)
+            result = Hook(pathlib.Path('foo')).run()
 
-        assert result.stdout.strip() == 'foo'
+        assert result.stdout == 'foo'
 
-    @unittest.skipIf(os.name == 'nt', 'on windows system')
+    @unittest.skipIf(OpSystem.find() == OpSystem.WINDOWS, 'on windows system')
     def test_bash_sh_extension(self):
-        """Test a Bash hook with an `.sh` extension."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.sh', 'w') as f:
                 f.write("#!/bin/bash\n\necho 'foo'")
-            result = Hook(Path('foo.sh')).run(capture_output=True)
+            result = Hook(pathlib.Path('foo.sh')).run()
+        assert result.stdout == 'foo'
 
-        assert result.stdout.strip() == 'foo'
-
-    @unittest.skipUnless(os.name == 'nt', 'on non-windows system')
+    @unittest.skipUnless(OpSystem.find() == OpSystem.WINDOWS, 'on non-windows system')
     def test_powershell(self):
-        """Test a Powershell hook."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.ps1', 'w') as f:
                 f.write("echo 'foo'")
-            result = Hook(Path('foo.ps1')).run(capture_output=True)
-
-        assert result.stdout.strip() == 'foo'
+            result = Hook(pathlib.Path('foo.ps1')).run()
+        assert result.stdout == 'foo'
 
     def test_unsupported(self):
-        """Test a hook with an unsupported extension."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
             with open('foo.bat', 'w') as f:
                 f.write('dir')
-
-            with self.assertRaises(RuntimeError):
-                Hook(Path('foo.bat')).run(capture_output=True)
+            with self.assertRaises(NotSupportedError):
+                Hook(pathlib.Path('foo.bat')).run()
 
 
 class TestEnvironment(unittest.TestCase):
 
     def test_create(self):
-        """Test creation of an environment."""
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             env = Environment(env_path)
             env.create()
-
             assert env_path.exists()
-            assert (env_path / Path('bin')).exists()
-            assert (env_path / Path('lib')).exists()
-            assert (env_path / Path('pyvenv.cfg')).exists()
+            assert env.activate_script.exists()
+            assert env.python_executable.exists()
+            assert env.site_packages.exists()
+            assert env.pyvenv_cfg.exists()
 
     def test_activate(self):
-        """Test if activation of an environment works.
-
-        This test works by checking the value of `PATH` before and after activating the
-        environment. After activating the environment, `PATH` should contain some
-        directories that are relative to the directory of the environment.
-        """
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # create an environment by directly accessing the `virtualenv` module's API.
-            env_path = Path(temp_dir) / Path('.venv')
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
             virtualenv.cli_run([str(env_path)])
-
             env = Environment(env_path)
-
             env.create()
             assert not env.is_activated
-
-            # pre-activation, none of the paths in `PATH` (i.e. `sys.path`) should
-            # have anything to do with the created environment.
-            assert all([not Path(path).is_relative_to(env_path) for path in sys.path])
+            # no path in `sys.path` should have anything to do with `env_path`
+            assert all([not pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
             env.activate()
             assert env.is_activated
+            # at least one path in `sys.path` should be relative to `env_path`
+            assert any([pathlib.Path(path).is_relative_to(env_path) for path in sys.path])
 
-            # post-activation, at least one of the paths in `PATH` (i.e. `sys.path`)
-            # should refer to the created environment.
-            assert any([Path(path).is_relative_to(env_path) for path in sys.path])
+    def test_setuptools_wheel_not_installed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
+            assert not env.has_installed('setuptools')
+            assert not env.has_installed('wheel')
 
-    @unittest.expectedFailure
-    def test_path_is_a_path(self):
-        """The `path` parameter passed must be a `pathlib.Path` instance."""
-        _ = Environment('.venv')
+    def test_pip_installed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
+            assert env.has_installed('pip')
 
+    def test_pip_latest_version(self):
+        version_cmd = Command(['pip', '--version'])
+        upgrade_cmd = Command(['pip', 'install', '--upgrade', 'pip'])
 
-class TestCommandUnderEnvironment(unittest.TestCase):
-
-    def test(self):
-        """Test a command run under an environment."""
-
-        command = Command(['pip', 'freeze'])
-
-        result = command.run(capture_output=True)
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            env_path = Path(temp_dir) / Path('.venv')
-            env = Environment(Path(env_path))
-            env.create_command.run(capture_output=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
             env.activate()
+            version = version_cmd.run().stdout
+            upgrade_cmd.run()
+            new_version = version_cmd.run().stdout
 
-            new_result = command.run(capture_output=True)
+        assert version == new_version
 
-        assert result.stdout != new_result.stdout
+    def test_package_installs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
+            env.activate()
+            Command(
+                ['pip', 'install', 'tabulate==0.8.4', 'build==0.4.0']
+            ).run()
+
+            assert env.has_installed('tabulate', '0.8.4')
+            assert env.has_installed('build', '0.4.0')
+
+    def test_package_imports(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
+            env.activate()
+            Command(['pip', 'install', 'tabulate']).run()
+            result = Command(['python', '-c', '"import tabulate"']).run()
+
+        assert result.returncode == 0
+        assert result.stdout == ''
+        assert result.stderr == ''
+
+    def test_console_scripts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = pathlib.Path(tmp) / '.venv'
+            env = Environment(env_path)
+            env.create()
+            env.activate()
+            Command(['pip', 'install', 'build']).run()
+            result = Command(['pyproject-build', '-h']).run()
+
+        assert result.returncode == 0
+        assert result.stdout != ''
+        assert result.stderr == ''
