@@ -18,16 +18,7 @@ def dumps(headers, body):
 
         for entry in entries:
             lines = entry.strip().split('\n')
-
-            # remove any blank lines arising due to consecutive newlines.
-            lines = [line for line in lines if line != '']
-
-            try:
-                text.append(f'{name}: {lines[0]}')
-            except IndexError:
-                # there aren't actually any values.
-                continue
-
+            text.append(f'{name}: {lines[0]}')
             for line in lines[1:]:
                 text.append(f'        {line}')
 

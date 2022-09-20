@@ -142,12 +142,8 @@ class TestBoundaryCases(unittest.TestCase):
 
         assert rfc822.dumps(headers, body) == text
 
-    def test_two_newlines_in_value_case1(self):
-        """A value in the headers contains two (or more) consecutive newlines.
-
-        The expected behaviour is that any consecutive newlines in the headers should be
-        collapsed down to a single newline.
-        """
+    def test_multiple_newlines_in_value_case1(self):
+        """A value in the headers contains two (or more) consecutive newlines."""
 
         headers = {
             'foo': ['bar', 'baz', 'foo\n\nbar'],
@@ -155,57 +151,52 @@ class TestBoundaryCases(unittest.TestCase):
         }
         body = 'foo bar\nbaz'
 
-        text = textwrap.dedent("""
-            foo: bar
-            foo: baz
-            foo: foo
-                    bar
-            bar: baz
-                    foo
-                    bar
-            bar: foo
-            bar: baz
+        # can't use textwrap.dedent here because it normalizes entirely blank lines to a
+        # newline character; refer help(textwrap.dedent)
+        text = """
+foo: bar
+foo: baz
+foo: foo
+        
+        bar
+bar: baz
+        foo
+        
+        
+        bar
+bar: foo
+bar: baz
 
-            foo bar
-            baz
-        """).strip()
-
+foo bar
+baz
+        """.strip()
         assert rfc822.dumps(headers, body) == text
 
-    def test_two_newlines_in_value_case2(self):
-        """Two (or more) consecutive newlines in headers must cause parsing issues.
+    def test_multiple_newlines_in_value_case2(self):
+        # again textwrap.dedent() can't be used here
+        text = """
+foo: bar
+foo: baz
+foo: foo
+        
+        bar
+bar: baz
+        foo
+        
+        
+        baz
+bar: foo
+bar: baz
 
-        This is somewhat a different test because it verifies that our implementation HAS
-        (instead of does NOT have) a particular flaw.
-        """
-
-        text = textwrap.dedent("""
-            foo: bar
-            foo: baz
-            foo: foo
-                    
-                    bar
-            bar: baz
-                    foo
-                    
-                    
-                    baz
-            bar: foo
-            bar: baz
-
-            foo bar
-            baz
-        """).strip()
-
-        # the headers and body from which the above text could have possibly been
-        # generated.
+foo bar
+baz
+        """.strip()
         headers = {
             'foo': ['bar', 'baz', 'foo\n\nbar'],
-            'bar': ['baz\nfoo\n\n\nbar', 'foo', 'baz'],
+            'bar': ['baz\nfoo\n\n\nbaz', 'foo', 'baz'],
         }
         body = 'foo bar\nbaz'
-
-        assert rfc822.loads(text) != (headers, body)
+        assert rfc822.loads(text) == (headers, body)
 
     def test_colon_without_space(self):
         """Using a colon without a space following it must cause parsing issues.
@@ -213,6 +204,7 @@ class TestBoundaryCases(unittest.TestCase):
         Again, this verifies that our implementation HAS a particular flaw.
         """
 
+        # TODO: an error should be raised here?
         text = textwrap.dedent("""
             foo:bar
             foo:baz
@@ -222,9 +214,6 @@ class TestBoundaryCases(unittest.TestCase):
             foo bar
             baz
         """).strip()
-
-        # the headers and body from which the above text could have possibly been
-        # generated.
         headers = {'foo': ['bar', 'baz'], 'bar': ['baz', 'foo']}
         body = 'foo bar\nbaz'
 
